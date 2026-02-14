@@ -71,6 +71,7 @@ mdcat = "dapple.extras.mdcat.mdcat:main"
 vidcat = "dapple.extras.vidcat.vidcat:main"
 csvcat = "dapple.extras.csvcat.cli:main"
 datacat = "dapple.extras.datacat.cli:main"
+dapple-skill = "dapple.skill:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

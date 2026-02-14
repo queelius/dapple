@@ -7,8 +7,6 @@ Example:
     $ pdfcat document.pdf              # View with auto-detected renderer
     $ pdfcat -r braille document.pdf   # Force braille renderer
     $ pdfcat --pages 1-3 document.pdf  # View specific pages
-    $ pdfcat --skill-install --global   # Install Claude Code skill
-
 As a library:
     >>> from dapple.extras.pdfcat import view, pdfcat
     >>> view("document.pdf")

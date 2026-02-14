@@ -152,28 +152,6 @@ class TestImageResolver:
         assert result is None
 
 
-class TestSkillInstall:
-    """Tests for skill installation."""
-
-    def test_skill_install_local(self):
-        from dapple.extras.mdcat.mdcat import skill_install
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("dapple.extras.mdcat.mdcat.Path.cwd", return_value=Path(tmpdir)):
-                result = skill_install(local=True)
-                assert result is True
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "mdcat.md"
-                assert skill_file.exists()
-
-    def test_skill_install_requires_flag(self, capsys):
-        from dapple.extras.mdcat.mdcat import skill_install
-
-        result = skill_install()
-        assert result is False
-        captured = capsys.readouterr()
-        assert "Specify --local or --global" in captured.err
-
-
 class TestMdcatFunction:
     """Tests for mdcat function."""
 
@@ -403,12 +381,3 @@ class TestMdcatCLI:
         )
         assert result.returncode != 0
 
-    def test_skill_subcommand(self):
-        import subprocess
-
-        result = subprocess.run(
-            ["python", "-m", "dapple.extras.mdcat.mdcat", "skill", "--show"],
-            capture_output=True, text=True,
-        )
-        assert result.returncode == 0
-        assert "mdcat" in result.stdout.lower()

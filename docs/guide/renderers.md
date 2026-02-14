@@ -18,17 +18,50 @@ dapple ships seven renderers. Each converts a bitmap into terminal output using 
 
 ## Choosing a Renderer
 
+### By terminal capabilities
+
 ```
-Is this running over SSH or in CI?
-  YES --> braille or ascii
-  NO  --> Does the terminal support Kitty graphics protocol?
-            YES --> kitty
-            NO  --> Does the terminal support Sixel?
-                      YES --> sixel
-                      NO  --> Do you want color?
-                                YES --> quadrants or sextants
-                                NO  --> braille
-                                        (or fingerprint for artistic output)
+Does the terminal support Kitty graphics protocol?
+  YES --> kitty (best possible quality — true pixels, 24-bit color)
+  NO  --> Does the terminal support Sixel?
+            YES --> sixel (true pixels, palette-based color)
+            NO  --> Use a character renderer (see below)
+```
+
+Kitty and sixel produce actual pixels — they look the best. But they only work in terminals that support the respective protocol, and they break in many contexts (SSH, tmux, screen, CI, Claude Code TUI, piped output). When pixel protocols are unavailable, you're choosing between character renderers.
+
+### By content type: sextants vs braille
+
+The two practical character renderers are **sextants** and **braille**. The choice depends on what you're rendering:
+
+| Content type | Best renderer | Why |
+|-------------|--------------|-----|
+| Photos, images | **sextants** | Fills cells with color — backgrounds look solid, continuous tone |
+| PDFs, scanned pages | **sextants** | Layouts have backgrounds, color, filled regions |
+| Video frames | **sextants** | Photographic content needs filled cells |
+| Screenshots, diagrams | **sextants** | Colored UI elements, filled shapes |
+| Math function plots | **braille** | Line art on empty background — crisper lines |
+| Data charts (line, scatter) | **braille** | Sparse lines benefit from higher dot density |
+| Line drawings, wireframes | **braille** | Pure geometry, no fill needed |
+
+**Why not always sextants?** Braille has higher resolution (2x4 = 8 dots vs 2x3 = 6 sub-cells per character) and produces crisper lines. For plots and line art where the background is empty, braille gives sharper detail.
+
+**Why not always braille?** Braille characters are *dots* — they can't fill a cell. Backgrounds appear as gaps between dots. A photo rendered in braille looks like a stipple drawing. Sextants (2x3 sub-cells per character) can fill entire regions, so continuous-tone content looks solid and readable.
+
+**Why not quadrants?** Sextants are strictly better — same two-color foreground/background approach but 50% more vertical resolution (2x3 vs 2x2). Quadrants exist mainly for terminals with older Unicode support that lack sextant characters (pre-Unicode 13.0).
+
+**What about ASCII?** Maximum compatibility but lowest quality. Only useful when Unicode support is uncertain (ancient terminals, certain logging contexts).
+
+### Decision summary
+
+```
+Pixel protocols available?
+  YES --> kitty (if supported), else sixel
+  NO  --> Is the content photographic / filled?
+            YES --> sextants
+            NO  --> Is it line art / plots / sparse?
+                      YES --> braille
+                      NO  --> sextants (safe default)
 ```
 
 For automated selection, use `auto_renderer()` from `dapple.auto`. See the [Auto-Detection guide](auto-detection.md).

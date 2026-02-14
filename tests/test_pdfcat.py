@@ -64,28 +64,6 @@ class TestPdfcatOptions:
         assert opts.dither is False
 
 
-class TestSkillInstall:
-    """Tests for skill installation."""
-
-    def test_skill_install_local(self):
-        from dapple.extras.pdfcat.pdfcat import skill_install
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("dapple.extras.pdfcat.pdfcat.Path.cwd", return_value=Path(tmpdir)):
-                result = skill_install(local=True)
-                assert result is True
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "pdfcat.md"
-                assert skill_file.exists()
-
-    def test_skill_install_requires_flag(self, capsys):
-        from dapple.extras.pdfcat.pdfcat import skill_install
-
-        result = skill_install()
-        assert result is False
-        captured = capsys.readouterr()
-        assert "Specify --local or --global" in captured.err
-
-
 class TestGetRenderer:
     """Tests for get_renderer function."""
 

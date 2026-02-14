@@ -17,8 +17,6 @@ from dapple.extras.vidcat.vidcat import (
     get_video_info,
     parse_frames,
     parse_interval,
-    skill_install,
-    SKILL_CONTENT,
 )
 
 
@@ -259,35 +257,6 @@ class TestExtractFrames:
             assert frames[1].name == "frame_0002.png"
 
 
-class TestSkillInstall:
-    """Tests for skill_install function."""
-
-    def test_no_location_specified(self, capsys):
-        result = skill_install(local=False, global_=False)
-        assert result is False
-        captured = capsys.readouterr()
-        assert "Specify --local or --global" in captured.err
-
-    def test_local_install(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch("pathlib.Path.cwd", return_value=Path(tmpdir)):
-                result = skill_install(local=True, global_=False)
-
-            assert result is True
-            skill_file = Path(tmpdir) / ".claude" / "skills" / "vidcat.md"
-            assert skill_file.exists()
-            assert skill_file.read_text() == SKILL_CONTENT
-
-    def test_global_install(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch("pathlib.Path.home", return_value=Path(tmpdir)):
-                result = skill_install(local=False, global_=True)
-
-            assert result is True
-            skill_file = Path(tmpdir) / ".claude" / "skills" / "vidcat.md"
-            assert skill_file.exists()
-
-
 class TestVidcatFunction:
     """Tests for vidcat main function."""
 
@@ -365,18 +334,6 @@ class TestCLI:
                 from dapple.extras.vidcat.vidcat import main
                 main()
             assert exc_info.value.code == 1
-
-    def test_skill_show(self, capsys):
-        """Test --skill-show outputs skill content."""
-        import sys
-        from unittest.mock import patch
-
-        with patch.object(sys, "argv", ["vidcat", "--skill-show"]):
-            from dapple.extras.vidcat.vidcat import main
-            main()
-
-        captured = capsys.readouterr()
-        assert "vidcat - Terminal Video Frame Viewer" in captured.out
 
     def test_file_not_found_cli(self, capsys):
         """Test error when video file doesn't exist."""

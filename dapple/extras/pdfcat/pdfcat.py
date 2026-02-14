@@ -328,84 +328,6 @@ def view(pdf_path: str | Path, **kwargs) -> bool:
     return pdfcat(pdf_path, **kwargs)
 
 
-# Claude Code skill content
-SKILL_CONTENT = '''# pdfcat - Terminal PDF Viewer
-
-pdfcat renders PDF pages as images in the user's terminal using dapple.
-Use this when the user wants to see a PDF visually — not when you need to
-read PDF text content (use the Read tool with pages parameter for that).
-
-## Usage
-
-```bash
-# View a PDF (auto-detects best renderer)
-pdfcat document.pdf
-
-# View specific pages
-pdfcat --pages 1-3 document.pdf
-pdfcat --pages "1,3,5" document.pdf
-
-# Use a specific renderer
-pdfcat -r braille document.pdf    # High detail, works everywhere
-pdfcat -r quadrants document.pdf  # Color blocks
-pdfcat -r sixel document.pdf      # True pixels (if supported)
-pdfcat -r kitty document.pdf      # For Kitty/Ghostty
-
-# Image processing
-pdfcat --dither document.pdf      # Dithering for better gradients
-pdfcat --contrast document.pdf    # Enhance contrast
-pdfcat --invert document.pdf      # Invert colors
-
-# Control quality
-pdfcat --dpi 300 document.pdf     # Higher resolution
-pdfcat -w 60 document.pdf         # Limit width
-```
-
-## When to Use
-
-Use pdfcat when the user wants to:
-- See what a PDF looks like visually in their terminal
-- Preview PDF layouts, graphics, or scanned pages
-- View PDF pages rendered as terminal art
-
-## Renderers
-
-| Renderer | Best For |
-|----------|----------|
-| auto | Auto-detect best for terminal |
-| kitty | Kitty/Ghostty terminals |
-| sixel | mlterm, foot, wezterm |
-| quadrants | Color output, most terminals |
-| braille | Detailed monochrome |
-| ascii | Universal compatibility |
-'''
-
-
-def skill_install(local: bool = False, global_: bool = False) -> bool:
-    """Install the pdfcat skill for Claude Code.
-
-    Args:
-        local: Install to current project (.claude/skills/)
-        global_: Install globally (~/.claude/skills/)
-
-    Returns:
-        True if successful
-    """
-    if local:
-        skill_dir = Path.cwd() / ".claude" / "skills"
-    elif global_:
-        skill_dir = Path.home() / ".claude" / "skills"
-    else:
-        print("Error: Specify --local or --global", file=sys.stderr)
-        return False
-
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    skill_file = skill_dir / "pdfcat.md"
-    skill_file.write_text(SKILL_CONTENT)
-    print(f"Installed skill to: {skill_file}")
-    return True
-
-
 def main() -> None:
     """CLI entry point."""
     import argparse
@@ -420,19 +342,6 @@ def main() -> None:
         "pdfs", type=Path, nargs="*", help="PDF file(s) to display"
     )
 
-    # Skill management flags
-    parser.add_argument(
-        "--skill-show", action="store_true", help="Show Claude Code skill content"
-    )
-    parser.add_argument(
-        "--skill-install", action="store_true", help="Install Claude Code skill"
-    )
-    parser.add_argument(
-        "--local", action="store_true", help="Install skill to current project"
-    )
-    parser.add_argument(
-        "--global", dest="global_", action="store_true", help="Install skill globally"
-    )
     parser.add_argument(
         "-r",
         "--renderer",
@@ -482,14 +391,6 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-
-    # Handle skill flags
-    if args.skill_show:
-        print(SKILL_CONTENT)
-        return
-    if args.skill_install:
-        success = skill_install(local=args.local, global_=args.global_)
-        sys.exit(0 if success else 1)
 
     # Main command
     if not args.pdfs:

@@ -7,8 +7,6 @@ Example:
     $ mdcat README.md              # View markdown file
     $ mdcat -r braille README.md   # Force braille for images
     $ mdcat --no-images README.md  # Skip image rendering
-    $ mdcat skill --install        # Install Claude Code skill
-
 As a library:
     >>> from dapple.extras.mdcat import view, mdcat
     >>> view("README.md")

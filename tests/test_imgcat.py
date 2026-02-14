@@ -65,65 +65,6 @@ class TestGetRenderer:
             get_renderer("unknown", opts)
 
 
-class TestSkillInstall:
-    """Tests for skill installation."""
-
-    def test_skill_install_local(self):
-        from dapple.extras.imgcat.imgcat import skill_install
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("dapple.extras.imgcat.imgcat.Path.cwd", return_value=Path(tmpdir)):
-                result = skill_install(local=True)
-                assert result is True
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "imgcat" / "SKILL.md"
-                assert skill_file.exists()
-
-    def test_skill_install_global(self):
-        from dapple.extras.imgcat.imgcat import skill_install
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("dapple.extras.imgcat.imgcat.Path.home", return_value=Path(tmpdir)):
-                result = skill_install(global_=True)
-                assert result is True
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "imgcat" / "SKILL.md"
-                assert skill_file.exists()
-                content = skill_file.read_text()
-                assert content.startswith("---")
-
-    def test_skill_install_requires_flag(self, capsys):
-        from dapple.extras.imgcat.imgcat import skill_install
-
-        result = skill_install()
-        assert result is False
-        captured = capsys.readouterr()
-        assert "Specify --local or --global" in captured.err
-
-
-class TestSkillContent:
-    """Tests for SKILL_CONTENT format and frontmatter."""
-
-    def test_skill_content_has_yaml_frontmatter(self):
-        from dapple.extras.imgcat.imgcat import SKILL_CONTENT
-
-        assert SKILL_CONTENT.startswith("---"), "SKILL_CONTENT must start with YAML frontmatter delimiter"
-        # Must have closing delimiter too
-        parts = SKILL_CONTENT.split("---", 2)
-        assert len(parts) >= 3, "SKILL_CONTENT must have opening and closing --- delimiters"
-
-    def test_skill_content_has_name_field(self):
-        from dapple.extras.imgcat.imgcat import SKILL_CONTENT
-
-        frontmatter = SKILL_CONTENT.split("---", 2)[1]
-        assert "name:" in frontmatter, "Frontmatter must contain a 'name' field"
-        assert "imgcat" in frontmatter
-
-    def test_skill_content_has_description_field(self):
-        from dapple.extras.imgcat.imgcat import SKILL_CONTENT
-
-        frontmatter = SKILL_CONTENT.split("---", 2)[1]
-        assert "description:" in frontmatter, "Frontmatter must contain a 'description' field"
-
-
 class TestGetRendererAll:
     """Extended tests for get_renderer covering all renderers."""
 

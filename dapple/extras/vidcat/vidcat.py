@@ -486,67 +486,6 @@ def to_asciinema(
     print(f"Play with: asciinema play {out_path}", file=sys.stderr)
 
 
-# Claude Code skill content
-SKILL_CONTENT = '''# vidcat - Terminal Video Frame Viewer
-
-vidcat extracts and displays video frames in the user's terminal using dapple
-renderers. The output is Unicode text (braille dots, block characters) that
-the user sees visually. You (Claude) cannot interpret the rendered frames.
-
-## Usage
-
-```bash
-# View frames from a video (default: up to 10 frames)
-vidcat animation.gif
-vidcat video.mp4
-
-# Select specific frames
-vidcat video.mp4 --frames 1-10        # Frames 1-10
-vidcat video.mp4 --frames "1,5,10"    # Specific frames
-vidcat video.mp4 --frames -5          # First 5 frames
-
-# Extract at intervals
-vidcat video.mp4 --every 1s           # 1 frame per second
-vidcat video.mp4 --every 30s          # Every 30 seconds
-
-# Use specific renderer
-vidcat animation.gif -r braille
-vidcat animation.gif -r sixel
-
-# Export to asciinema
-vidcat video.mp4 --asciinema output.cast --fps 15
-```
-
-## When to Use
-
-Use vidcat when the user wants to:
-- See video frames displayed in their terminal
-- Preview animated GIF content visually
-- Create asciinema recordings of video content
-
-## Requirements
-
-Requires ffmpeg to be installed: `apt install ffmpeg` or `brew install ffmpeg`
-'''
-
-
-def skill_install(local: bool = False, global_: bool = False) -> bool:
-    """Install the vidcat skill for Claude Code."""
-    if local:
-        skill_dir = Path.cwd() / ".claude" / "skills"
-    elif global_:
-        skill_dir = Path.home() / ".claude" / "skills"
-    else:
-        print("Error: Specify --local or --global", file=sys.stderr)
-        return False
-
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    skill_file = skill_dir / "vidcat.md"
-    skill_file.write_text(SKILL_CONTENT)
-    print(f"Installed skill to: {skill_file}")
-    return True
-
-
 def main() -> None:
     """CLI entry point."""
     import argparse
@@ -628,33 +567,7 @@ def main() -> None:
         help="Title for asciinema recording",
     )
 
-    # Skill management
-    parser.add_argument(
-        "--skill-install", action="store_true",
-        help="Install Claude Code skill",
-    )
-    parser.add_argument(
-        "--skill-show", action="store_true",
-        help="Show Claude Code skill content",
-    )
-    parser.add_argument(
-        "--local", action="store_true",
-        help="Install skill to current project",
-    )
-    parser.add_argument(
-        "--global", dest="global_", action="store_true",
-        help="Install skill globally",
-    )
-
     args = parser.parse_args()
-
-    # Handle skill options
-    if args.skill_show:
-        print(SKILL_CONTENT)
-        return
-    if args.skill_install:
-        success = skill_install(local=args.local, global_=args.global_)
-        sys.exit(0 if success else 1)
 
     # Main command
     if not args.videos:
