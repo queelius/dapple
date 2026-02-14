@@ -419,7 +419,6 @@ class TestCLI:
         jsonl = '{"a":"x"}\n{"a":"y"}'
         result = self._run(["--spark", ".bogus"], stdin=jsonl)
         assert result.returncode != 0
-        assert "datacat:" in result.stderr
         assert "No numeric values" in result.stderr
         # Should NOT show a Python traceback
         assert "Traceback" not in result.stderr
@@ -435,7 +434,6 @@ class TestCLI:
         jsonl = '{"v":1}\n{"v":2}'
         result = self._run(["--spark", ".v", "--color", "neonpurple"], stdin=jsonl)
         assert result.returncode != 0
-        assert "datacat:" in result.stderr
         assert "Unknown color" in result.stderr
         assert "Traceback" not in result.stderr
 

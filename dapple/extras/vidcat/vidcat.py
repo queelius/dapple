@@ -489,7 +489,9 @@ def to_asciinema(
 # Claude Code skill content
 SKILL_CONTENT = '''# vidcat - Terminal Video Frame Viewer
 
-vidcat extracts and displays video frames in the terminal using dapple renderers.
+vidcat extracts and displays video frames in the user's terminal using dapple
+renderers. The output is Unicode text (braille dots, block characters) that
+the user sees visually. You (Claude) cannot interpret the rendered frames.
 
 ## Usage
 
@@ -517,11 +519,10 @@ vidcat video.mp4 --asciinema output.cast --fps 15
 
 ## When to Use
 
-Use vidcat when you need to:
-- Preview video content in terminal
-- Extract key frames for inspection
+Use vidcat when the user wants to:
+- See video frames displayed in their terminal
+- Preview animated GIF content visually
 - Create asciinema recordings of video content
-- Display animated GIFs
 
 ## Requirements
 
@@ -668,6 +669,7 @@ def main() -> None:
 
     errors: list[str] = []
     exit_code = 0
+    first_video = True
     try:
         for video_path in args.videos:
             if not video_path.exists():
@@ -701,9 +703,12 @@ def main() -> None:
 
             # Print separator for multiple videos
             if len(args.videos) > 1:
-                dest.write(f"\n{'='*60}\n")
+                if not first_video:
+                    dest.write("\n")
+                dest.write(f"{'='*60}\n")
                 dest.write(f"  {video_path.name}\n")
                 dest.write(f"{'='*60}\n\n")
+                first_video = False
 
             try:
                 vidcat(

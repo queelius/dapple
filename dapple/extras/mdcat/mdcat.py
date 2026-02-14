@@ -325,7 +325,10 @@ def view(md_path: str | Path, **kwargs) -> None:
 # Claude Code skill content
 SKILL_CONTENT = '''# mdcat - Terminal Markdown Viewer
 
-mdcat renders markdown files in the terminal with inline image support.
+mdcat renders markdown files with rich formatting in the user's terminal.
+Use this when the user wants to read a markdown file with syntax highlighting,
+inline images, and styled headings — not when you need to read the file yourself
+(use the Read tool for that).
 
 ## Usage
 
@@ -353,23 +356,10 @@ mdcat --code-theme dracula README.md
 
 ## When to Use
 
-Use mdcat when you need to:
-- Display markdown documentation to the user
-- Preview README files with formatting
-- Show markdown with inline images
-- Present formatted text content
-
-## Python API
-
-```python
-from dapple.extras.mdcat import view, mdcat
-
-# Quick view
-view("README.md")
-
-# With options
-mdcat("README.md", renderer="braille", render_images=True)
-```
+Use mdcat when the user wants to:
+- Read markdown documentation with rich formatting in their terminal
+- Preview README files with syntax highlighting and styled headings
+- View markdown with inline images rendered visually
 
 ## Renderers for Images
 
@@ -482,6 +472,7 @@ def main() -> None:
 
     errors: list[str] = []
     exit_code = 0
+    first_file = True
     try:
         for file_path in args.files:
             if not file_path.exists():
@@ -490,11 +481,13 @@ def main() -> None:
 
             # Print separator for multiple files
             if len(args.files) > 1:
-                separator = f"\n{'='*60}\n  {file_path.name}\n{'='*60}\n"
+                prefix = "\n" if not first_file else ""
+                separator = f"{prefix}{'='*60}\n  {file_path.name}\n{'='*60}\n"
                 if dest:
                     dest.write(separator)
                 else:
                     print(separator)
+                first_file = False
 
             try:
                 mdcat(

@@ -75,11 +75,16 @@ def get_renderer(
             return braille(color_mode="grayscale")
         return braille(color_mode="truecolor")
 
-    if grayscale and name in ("quadrants", "sextants"):
-        if name == "quadrants":
-            return quadrants(grayscale=True)
-        return sextants(grayscale=True)
+    if name in ("quadrants", "sextants"):
+        # no_color or grayscale both map to grayscale mode (closest
+        # approximation — these renderers always use ANSI codes)
+        if no_color or grayscale:
+            if name == "quadrants":
+                return quadrants(grayscale=True)
+            return sextants(grayscale=True)
 
+    # ascii, fingerprint are inherently colorless;
+    # sixel, kitty are pixel protocols where no_color doesn't apply
     return renderer  # type: ignore[return-value]
 
 

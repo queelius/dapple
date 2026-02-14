@@ -5,6 +5,8 @@ Supports chaining multiple functions via JSON piping:
     funcat "sin(x)" --json | funcat "cos(x)" --color red --json | funcat "x/3"
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import shutil
@@ -486,7 +488,7 @@ def print_legend(entries: list[tuple[str, tuple[float, float, float]]]) -> None:
     print("  ".join(parts))
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         prog='funcat',
         description='Plot mathematical functions in the terminal with selectable renderers',

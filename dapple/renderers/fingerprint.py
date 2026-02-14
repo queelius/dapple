@@ -34,7 +34,7 @@ GLYPH_SETS = {
 
 # Build extended set
 GLYPH_SETS["extended"] = (
-    (GLYPH_SETS["basic"] or "") + (GLYPH_SETS["blocks"] or "") + (GLYPH_SETS["braille"] or "")
+    GLYPH_SETS["basic"] + GLYPH_SETS["blocks"] + GLYPH_SETS["braille"]
 )
 
 

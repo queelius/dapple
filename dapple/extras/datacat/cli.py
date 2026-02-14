@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+from typing import Iterator, TextIO
 
 from dapple.extras.datacat.datacat import (
     dot_path_query,
@@ -28,8 +30,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="JSON/JSONL file(s) to display (reads stdin if omitted)",
     )
     parser.add_argument(
-        "query",
-        nargs="?",
+        "-q", "--query",
+        metavar="PATH",
         help="Dot-path query (e.g. .database.host)",
     )
 
@@ -130,10 +132,6 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-from pathlib import Path
-from typing import Iterator
-
-
 def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, str | None, str | None]]:
     """Yield (name, text_content, error) tuples for each input source.
 
@@ -158,7 +156,7 @@ def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, str | None, str
 
 
 def _is_plot_mode(args: argparse.Namespace) -> bool:
-    return any([args.plot, args.spark, args.bar, args.histogram])
+    return any((args.plot, args.spark, args.bar, args.histogram))
 
 
 _BOOL_STRINGS = {"true", "false"}
@@ -254,7 +252,7 @@ def _format_table_output(
     return "\n".join(lines)
 
 
-def _run_display_mode(data, args: argparse.Namespace) -> None:
+def _run_display_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
     """Handle display/query mode output."""
     # Apply head/tail for list data
     if isinstance(data, list):
@@ -276,31 +274,22 @@ def _run_display_mode(data, args: argparse.Namespace) -> None:
     else:
         output = format_tree(data)
 
-    if args.output:
-        with open(args.output, "w") as f:
-            f.write(output + "\n")
-    else:
-        print(output)
+    dest.write(output + "\n")
 
 
-def _run_plot_mode(data, args: argparse.Namespace) -> None:
+def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
     """Render a chart from JSON data using vizlib."""
     from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
     from dapple.extras.vizlib.charts import bar_chart, histogram, line_plot, sparkline
     from dapple.extras.vizlib.colors import parse_color
 
     if not isinstance(data, list):
-        print("datacat: plot mode requires JSONL input (array of records)", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError("plot mode requires JSONL input (array of records)")
 
     # Parse --color if provided
     color = None
     if args.color:
-        try:
-            color = parse_color(args.color)
-        except ValueError as e:
-            print(f"datacat: {e}", file=sys.stderr)
-            sys.exit(1)
+        color = parse_color(args.color)
 
     renderer = get_renderer(args.renderer)
     term_cols, term_lines = get_terminal_size()
@@ -308,31 +297,22 @@ def _run_plot_mode(data, args: argparse.Namespace) -> None:
     char_h = args.height or max(10, term_lines // 3)
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
 
-    dest = open(args.output, "w") if args.output else sys.stdout
+    if args.spark:
+        values = extract_field_values(data, args.spark)
+        canvas = sparkline(values, width=px_w, height=px_h, color=color)
+    elif args.plot:
+        values = extract_field_values(data, args.plot)
+        canvas = line_plot(values, width=px_w, height=px_h, color=color)
+    elif args.bar:
+        labels, counts = extract_field_categories(data, args.bar)
+        canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)
+    elif args.histogram:
+        values = extract_field_values(data, args.histogram)
+        canvas = histogram(values, width=px_w, height=px_h, color=color)
+    else:
+        return
 
-    try:
-        if args.spark:
-            values = extract_field_values(data, args.spark)
-            canvas = sparkline(values, width=px_w, height=px_h, color=color)
-        elif args.plot:
-            values = extract_field_values(data, args.plot)
-            canvas = line_plot(values, width=px_w, height=px_h, color=color)
-        elif args.bar:
-            labels, counts = extract_field_categories(data, args.bar)
-            canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)
-        elif args.histogram:
-            values = extract_field_values(data, args.histogram)
-            canvas = histogram(values, width=px_w, height=px_h, color=color)
-        else:
-            return
-
-        canvas.out(renderer, dest=dest)
-    except ValueError as e:
-        print(f"datacat: {e}", file=sys.stderr)
-        sys.exit(1)
-    finally:
-        if args.output and dest is not sys.stdout:
-            dest.close()
+    canvas.out(renderer, dest=dest)
 
 
 def main() -> None:
@@ -343,6 +323,7 @@ def main() -> None:
     errors: list[str] = []
     exit_code = 0
     first_file = True
+    dest = open(args.output, "w") if args.output else sys.stdout
 
     try:
         for name, text, error in _get_inputs(args):
@@ -356,22 +337,24 @@ def main() -> None:
                 # Print separator for multiple files
                 if args.files and len(args.files) > 1:
                     if not first_file:
-                        print()  # Blank line between files
-                    print(f"{'='*60}")
-                    print(f"  {name}")
-                    print(f"{'='*60}")
-                    print()
+                        dest.write("\n")
+                    dest.write(f"{'='*60}\n")
+                    dest.write(f"  {name}\n")
+                    dest.write(f"{'='*60}\n\n")
                     first_file = False
 
                 if _is_plot_mode(args):
-                    _run_plot_mode(data, args)
+                    _run_plot_mode(data, args, dest)
                 else:
-                    _run_display_mode(data, args)
+                    _run_display_mode(data, args, dest)
             except Exception as e:
                 errors.append(f"{name}: {e}")
                 continue
     except KeyboardInterrupt:
         exit_code = 130
+    finally:
+        if dest is not sys.stdout:
+            dest.close()
 
     if errors:
         for err in errors:

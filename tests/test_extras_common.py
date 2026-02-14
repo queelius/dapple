@@ -65,6 +65,28 @@ class TestGetRenderer:
         assert isinstance(renderer, Renderer)
         assert renderer.grayscale is False
 
+    def test_quadrants_no_color(self):
+        """quadrants + no_color falls back to grayscale mode."""
+        renderer = get_renderer("quadrants", no_color=True)
+        assert isinstance(renderer, Renderer)
+        assert renderer.grayscale is True
+
+    def test_sextants_no_color(self):
+        """sextants + no_color falls back to grayscale mode."""
+        renderer = get_renderer("sextants", no_color=True)
+        assert isinstance(renderer, Renderer)
+        assert renderer.grayscale is True
+
+    def test_ascii_no_color_unchanged(self):
+        """ascii + no_color returns default (already colorless)."""
+        renderer = get_renderer("ascii", no_color=True)
+        assert isinstance(renderer, Renderer)
+
+    def test_fingerprint_no_color_unchanged(self):
+        """fingerprint + no_color returns default (already colorless)."""
+        renderer = get_renderer("fingerprint", no_color=True)
+        assert isinstance(renderer, Renderer)
+
     def test_auto_returns_renderer(self):
         """'auto' returns a valid Renderer."""
         renderer = get_renderer("auto")

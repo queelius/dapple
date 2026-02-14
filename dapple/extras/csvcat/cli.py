@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+from typing import Iterator, TextIO
 
 from dapple.extras.csvcat.csvcat import (
     CsvData,
@@ -130,11 +132,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-from pathlib import Path
-from typing import Iterator
-
-
-def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, any, str | None]]:
+def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, TextIO | None, str | None]]:
     """Yield (name, file_handle, error) tuples for each input source.
 
     If error is not None, file_handle will be None and error contains the message.
@@ -157,10 +155,10 @@ def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, any, str | None
 
 
 def _is_plot_mode(args: argparse.Namespace) -> bool:
-    return any([args.plot, args.spark, args.bar, args.histogram, args.heatmap])
+    return any((args.plot, args.spark, args.bar, args.histogram, args.heatmap))
 
 
-def _run_table_mode(data: CsvData, args: argparse.Namespace) -> None:
+def _run_table_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> None:
     """Apply table transformations and print."""
     if args.cols:
         col_names = [c.strip() for c in args.cols.split(",")]
@@ -175,14 +173,10 @@ def _run_table_mode(data: CsvData, args: argparse.Namespace) -> None:
         data = tail(data, args.tail_n)
 
     output = format_table(data, cycle_colors=args.cycle_color)
-    if args.output:
-        with open(args.output, "w") as f:
-            f.write(output + "\n")
-    else:
-        print(output)
+    dest.write(output + "\n")
 
 
-def _run_plot_mode(data: CsvData, args: argparse.Namespace) -> None:
+def _run_plot_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> None:
     """Render a chart from CSV data using vizlib."""
     from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
     from dapple.extras.vizlib.charts import bar_chart, heatmap, histogram, line_plot, sparkline
@@ -193,34 +187,28 @@ def _run_plot_mode(data: CsvData, args: argparse.Namespace) -> None:
     char_h = args.height or max(10, term_lines // 3)
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
 
-    dest = open(args.output, "w") if args.output else sys.stdout
+    if args.spark:
+        values = extract_numeric(data, args.spark)
+        canvas = sparkline(values, width=px_w, height=px_h)
+    elif args.plot:
+        values = extract_numeric(data, args.plot)
+        canvas = line_plot(values, width=px_w, height=px_h)
+    elif args.bar:
+        labels, counts = extract_categories(data, args.bar)
+        canvas = bar_chart(labels, counts, width=px_w, height=px_h)
+    elif args.histogram:
+        values = extract_numeric(data, args.histogram)
+        canvas = histogram(values, width=px_w, height=px_h)
+    elif args.heatmap:
+        col_names = [c.strip() for c in args.heatmap.split(",")]
+        grid: list[list[float]] = []
+        for col in col_names:
+            grid.append(extract_numeric(data, col))
+        canvas = heatmap(grid, width=px_w, height=px_h)
+    else:
+        return
 
-    try:
-        if args.spark:
-            values = extract_numeric(data, args.spark)
-            canvas = sparkline(values, width=px_w, height=px_h)
-        elif args.plot:
-            values = extract_numeric(data, args.plot)
-            canvas = line_plot(values, width=px_w, height=px_h)
-        elif args.bar:
-            labels, counts = extract_categories(data, args.bar)
-            canvas = bar_chart(labels, counts, width=px_w, height=px_h)
-        elif args.histogram:
-            values = extract_numeric(data, args.histogram)
-            canvas = histogram(values, width=px_w, height=px_h)
-        elif args.heatmap:
-            col_names = [c.strip() for c in args.heatmap.split(",")]
-            grid: list[list[float]] = []
-            for col in col_names:
-                grid.append(extract_numeric(data, col))
-            canvas = heatmap(grid, width=px_w, height=px_h)
-        else:
-            return
-
-        canvas.out(renderer, dest=dest)
-    finally:
-        if args.output and dest is not sys.stdout:
-            dest.close()
+    canvas.out(renderer, dest=dest)
 
 
 def main() -> None:
@@ -231,6 +219,7 @@ def main() -> None:
     errors: list[str] = []
     exit_code = 0
     first_file = True
+    dest = open(args.output, "w") if args.output else sys.stdout
 
     try:
         for name, source, error in _get_inputs(args):
@@ -248,17 +237,16 @@ def main() -> None:
                 # Print separator for multiple files
                 if args.files and len(args.files) > 1:
                     if not first_file:
-                        print()  # Blank line between files
-                    print(f"{'='*60}")
-                    print(f"  {name}")
-                    print(f"{'='*60}")
-                    print()
+                        dest.write("\n")
+                    dest.write(f"{'='*60}\n")
+                    dest.write(f"  {name}\n")
+                    dest.write(f"{'='*60}\n\n")
                     first_file = False
 
                 if _is_plot_mode(args):
-                    _run_plot_mode(data, args)
+                    _run_plot_mode(data, args, dest)
                 else:
-                    _run_table_mode(data, args)
+                    _run_table_mode(data, args, dest)
             except Exception as e:
                 errors.append(f"{name}: {e}")
                 continue
@@ -267,6 +255,9 @@ def main() -> None:
                     source.close()
     except KeyboardInterrupt:
         exit_code = 130
+    finally:
+        if dest is not sys.stdout:
+            dest.close()
 
     if errors:
         for err in errors:

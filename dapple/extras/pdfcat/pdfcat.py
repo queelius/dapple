@@ -331,7 +331,9 @@ def view(pdf_path: str | Path, **kwargs) -> bool:
 # Claude Code skill content
 SKILL_CONTENT = '''# pdfcat - Terminal PDF Viewer
 
-pdfcat renders PDF documents as images in the terminal using dapple.
+pdfcat renders PDF pages as images in the user's terminal using dapple.
+Use this when the user wants to see a PDF visually — not when you need to
+read PDF text content (use the Read tool with pages parameter for that).
 
 ## Usage
 
@@ -361,23 +363,10 @@ pdfcat -w 60 document.pdf         # Limit width
 
 ## When to Use
 
-Use pdfcat when you need to:
-- Preview PDF documents visually in the terminal
-- Show the user what a PDF looks like
-- Check PDF layouts or graphics
-- Display PDF pages to the user
-
-## Python API
-
-```python
-from dapple.extras.pdfcat import view, pdfcat
-
-# Quick view
-view("document.pdf")
-
-# With options
-pdfcat("document.pdf", pages="1-3", renderer="braille", dither=True)
-```
+Use pdfcat when the user wants to:
+- See what a PDF looks like visually in their terminal
+- Preview PDF layouts, graphics, or scanned pages
+- View PDF pages rendered as terminal art
 
 ## Renderers
 
@@ -516,6 +505,7 @@ def main() -> None:
 
     errors: list[str] = []
     exit_code = 0
+    first_pdf = True
     try:
         for pdf_path in args.pdfs:
             if not pdf_path.exists():
@@ -524,9 +514,12 @@ def main() -> None:
 
             # Print separator for multiple PDFs
             if len(args.pdfs) > 1:
-                dest.write(f"\n{'='*60}\n")
+                if not first_pdf:
+                    dest.write("\n")
+                dest.write(f"{'='*60}\n")
                 dest.write(f"  {pdf_path.name}\n")
                 dest.write(f"{'='*60}\n\n")
+                first_pdf = False
 
             try:
                 success = pdfcat(

@@ -173,18 +173,23 @@ SKILL_CONTENT = '''\
 ---
 name: imgcat
 description: >-
-  Use when the user asks to show an image, display a picture, view a photo,
-  preview an image file, render an image in the terminal, or see what an
-  image looks like. Also use when you need to visually inspect image output
-  from a pipeline or verify generated images.
+  Use when the user asks to show, display, or preview an image file in
+  their terminal. This renders images TO THE USER — the output is Unicode
+  text (braille dots, block characters) that the user sees visually.
+  Do NOT use this to inspect images yourself; you cannot see the rendered output.
 ---
 
-Display images in the terminal using `imgcat` from the dapple library.
+Display images in the user's terminal using `imgcat` from the dapple library.
+
+**Important**: imgcat renders images as Unicode text to the user's terminal.
+You (Claude) cannot visually interpret the output — it appears as encoded
+braille/block characters in your context. Use this tool when the *user* wants
+to see an image, not when you need to analyze image contents.
 
 ## When to use
 
 Invoke this skill when the user asks you to show, display, preview, or view an
-image file (PNG, JPEG, GIF, BMP, TIFF, WebP, etc.) in the terminal.
+image file (PNG, JPEG, GIF, BMP, TIFF, WebP, etc.) in their terminal.
 
 ## How to invoke
 
@@ -236,11 +241,6 @@ imgcat scan.png -r braille -w 80 --contrast
 # Multiple images
 imgcat *.png -r braille -w 60
 ```
-
-## Experimental note
-
-Output goes to stdout. If images don't render visually in the Claude Code TUI,
-fall back to `-r braille` which produces Unicode text that always displays.
 '''
 
 
