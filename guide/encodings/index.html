@@ -1,0 +1,2556 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified terminal graphics — one Canvas API, seven renderers">
+      
+      
+      
+        <link rel="canonical" href="https://queelius.github.io/dapple/guide/encodings/">
+      
+      
+        <link rel="prev" href="../renderers/">
+      
+      
+        <link rel="next" href="../preprocessing/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>Character Encodings - dapple</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#character-encodings" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="dapple" class="md-header__button md-logo" aria-label="dapple" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            dapple
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Character Encodings
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/queelius/dapple" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    queelius/dapple
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../concepts/philosophy/" class="md-tabs__link">
+          
+  
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../canvas/" class="md-tabs__link">
+          
+  
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../layout/" class="md-tabs__link">
+          
+  
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tools/" class="md-tabs__link">
+          
+  
+  
+  CLI Tools
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../blog/" class="md-tabs__link">
+          
+  
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="dapple" class="md-nav__button md-logo" aria-label="dapple" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    dapple
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/queelius/dapple" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    queelius/dapple
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Philosophy
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Design Patterns
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Canvas
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../renderers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Renderers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Character Encodings
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Character Encodings
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#braille-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Braille Encoding
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Braille Encoding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      The algorithm
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Color modes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quadrants-and-sextants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quadrants and Sextants
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quadrants and Sextants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-two-color-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      The two-color problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quadrants-16-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quadrants: 16 patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sextants-64-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sextants: 64 patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foregroundbackground-color-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Foreground/background color selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vectorized-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vectorized rendering
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ascii" class="md-nav__link">
+    <span class="md-ellipsis">
+      ASCII
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ASCII">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-ramps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available ramps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sixel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sixel
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sixel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Encoding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-color-painting-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Per-color painting model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-length-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run-length encoding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#palette-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Palette definition
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-sequence-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Full sequence structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quantization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quantization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kitty" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kitty
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kitty">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#escape-sequence-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Escape sequence structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chunking
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#png-vs-raw-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      PNG vs raw formats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fingerprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fingerprint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fingerprint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-algorithm_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      The algorithm
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#glyph-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glyph preparation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#font-dependence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Font dependence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distance-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distance metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vectorized-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vectorized matching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Preprocessing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auto-detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Auto-Detection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Layout Engine
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Charts API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    CLI Tools
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            CLI Tools
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/imgcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    imgcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/vidcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    vidcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/pdfcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    pdfcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/mdcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    mdcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/funcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    funcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/csvcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    csvcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/datacat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    datacat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/vizlib/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    vizlib
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/compcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    compcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/thumbcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    thumbcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/ansicat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ansicat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/diffcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    diffcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/storycat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    storycat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/plotcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    plotcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/dashcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    dashcat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/terminal-graphics-ai-age/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Terminal Graphics in the AI Age
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/one-canvas-seven-renderers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    One Canvas, Seven Renderers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/viewers-and-creators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Viewers and Creators
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/encodings-and-preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Encodings and Preprocessing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#braille-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Braille Encoding
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Braille Encoding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      The algorithm
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Color modes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quadrants-and-sextants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quadrants and Sextants
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quadrants and Sextants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-two-color-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      The two-color problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quadrants-16-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quadrants: 16 patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sextants-64-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sextants: 64 patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foregroundbackground-color-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Foreground/background color selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vectorized-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vectorized rendering
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ascii" class="md-nav__link">
+    <span class="md-ellipsis">
+      ASCII
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ASCII">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-ramps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available ramps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sixel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sixel
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sixel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Encoding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-color-painting-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Per-color painting model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-length-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run-length encoding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#palette-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Palette definition
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-sequence-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Full sequence structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quantization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quantization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kitty" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kitty
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kitty">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#escape-sequence-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Escape sequence structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chunking
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#png-vs-raw-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      PNG vs raw formats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fingerprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fingerprint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fingerprint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-algorithm_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      The algorithm
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#glyph-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glyph preparation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#font-dependence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Font dependence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distance-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distance metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vectorized-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vectorized matching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="character-encodings">Character Encodings<a class="headerlink" href="#character-encodings" title="Permanent link">&para;</a></h1>
+<p>This guide explains how each of dapple's seven renderers encodes bitmap pixels into terminal output. Understanding the encoding helps you choose the right renderer and tune its parameters.</p>
+<h2 id="braille-encoding">Braille Encoding<a class="headerlink" href="#braille-encoding" title="Permanent link">&para;</a></h2>
+<p><strong>Range:</strong> U+2800--U+28FF (256 codepoints)
+<strong>Cell:</strong> 2 wide x 4 tall = 8 binary pixels per character</p>
+<p>Unicode braille characters encode a 2x4 dot grid directly into the codepoint. The base character is U+2800 (blank braille pattern). Each of the 8 dots corresponds to one bit:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Position:       Bit index:
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>col 0  col 1   col 0  col 1
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a> [0]    [3]     bit 0   bit 3
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a> [1]    [4]     bit 1   bit 4
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a> [2]    [5]     bit 2   bit 5
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a> [6]    [7]     bit 6   bit 7
+</code></pre></div>
+<p>The codepoint is <code>U+2800 + (sum of set bits)</code>. For example, dots 1 and 4 set bits 0 and 3, giving <code>U+2800 + 1 + 8 = U+2809</code>.</p>
+<h3 id="the-algorithm">The algorithm<a class="headerlink" href="#the-algorithm" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">BRAILLE_BASE</span> <span class="o">=</span> <span class="mh">0x2800</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Mapping: (row, col) -&gt; bit index</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">DOT_MAP</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">]</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">region_to_braille</span><span class="p">(</span><span class="n">region_4x2</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a 4x2 pixel region to a braille character.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">code</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">DOT_MAP</span><span class="p">:</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="k">if</span> <span class="n">region_4x2</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>            <span class="n">code</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">bit</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="k">return</span> <span class="nb">chr</span><span class="p">(</span><span class="n">BRAILLE_BASE</span> <span class="o">+</span> <span class="n">code</span><span class="p">)</span>
+</code></pre></div>
+<p>Each pixel is a binary decision: above threshold = dot on, below = dot off. This means braille output is inherently binary. To encode grayscale information, use preprocessing (dithering) before rendering, or use braille's color modes to tint each character.</p>
+<h3 id="color-modes">Color modes<a class="headerlink" href="#color-modes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>"none"</code></strong>: plain Unicode characters, no escape codes. Works everywhere.</li>
+<li><strong><code>"grayscale"</code></strong>: 256-color ANSI foreground (codes 232--255, 24 gray levels). The average brightness of the 2x4 region sets the gray level.</li>
+<li><strong><code>"truecolor"</code></strong>: 24-bit ANSI foreground. If RGB colors are available, the average color of the region is used. Otherwise, falls back to gray.</li>
+</ul>
+<hr />
+<h2 id="quadrants-and-sextants">Quadrants and Sextants<a class="headerlink" href="#quadrants-and-sextants" title="Permanent link">&para;</a></h2>
+<h3 id="the-two-color-problem">The two-color problem<a class="headerlink" href="#the-two-color-problem" title="Permanent link">&para;</a></h3>
+<p>Block characters split each cell into sub-regions. A 2x2 cell has 4 sub-pixels, giving 2^4 = 16 possible patterns. A 2x3 cell has 6 sub-pixels, giving 2^3 = 64 possible patterns. But each character position can display at most two colors: foreground and background.</p>
+<p>The renderer must decide which pixels are "foreground" and which are "background," then pick the two colors that best represent the region.</p>
+<h3 id="quadrants-16-patterns">Quadrants: 16 patterns<a class="headerlink" href="#quadrants-16-patterns" title="Permanent link">&para;</a></h3>
+<p>The 16 quadrant block characters use bit positions TL=8, TR=4, BL=2, BR=1:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Pattern 0b0000: &quot; &quot;  (empty)       Pattern 0b1000: &quot;▘&quot; (top-left)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Pattern 0b0001: &quot;▗&quot;  (bottom-right) Pattern 0b1001: &quot;▚&quot; (diagonal)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Pattern 0b0010: &quot;▖&quot;  (bottom-left)  Pattern 0b1010: &quot;▌&quot; (left half)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>Pattern 0b0011: &quot;▄&quot;  (lower half)   Pattern 0b1011: &quot;▙&quot; (missing TR)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>Pattern 0b0100: &quot;▝&quot;  (top-right)    Pattern 0b1100: &quot;▀&quot; (upper half)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>Pattern 0b0101: &quot;▐&quot;  (right half)   Pattern 0b1101: &quot;▜&quot; (missing BL)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Pattern 0b0110: &quot;▞&quot;  (diagonal)     Pattern 0b1110: &quot;▛&quot; (missing BR)
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>Pattern 0b0111: &quot;▟&quot;  (missing TL)   Pattern 0b1111: &quot;█&quot; (full block)
+</code></pre></div>
+<h3 id="sextants-64-patterns">Sextants: 64 patterns<a class="headerlink" href="#sextants-64-patterns" title="Permanent link">&para;</a></h3>
+<p>Sextant characters (U+1FB00--U+1FB3B) encode a 2x3 grid. Three special patterns use existing block characters:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Character</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 (empty)</td>
+<td><code></code> (space)</td>
+<td>All cells off</td>
+</tr>
+<tr>
+<td>21 (left half)</td>
+<td><code>▌</code> (U+258C)</td>
+<td>Cells 0, 2, 4</td>
+</tr>
+<tr>
+<td>42 (right half)</td>
+<td><code>▐</code> (U+2590)</td>
+<td>Cells 1, 3, 5</td>
+</tr>
+<tr>
+<td>63 (full)</td>
+<td><code>█</code> (U+2588)</td>
+<td>All cells on</td>
+</tr>
+</tbody>
+</table>
+<p>The remaining 60 patterns are assigned to U+1FB00 through U+1FB3B, skipping the two special values.</p>
+<h3 id="foregroundbackground-color-selection">Foreground/background color selection<a class="headerlink" href="#foregroundbackground-color-selection" title="Permanent link">&para;</a></h3>
+<p>The algorithm for both quadrants and sextants is the same:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">render_block</span><span class="p">(</span><span class="n">block_pixels</span><span class="p">,</span> <span class="n">block_colors</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single 2x2 or 2x3 block.&quot;&quot;&quot;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="c1"># 1. Compute per-pixel luminance</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">if</span> <span class="n">block_colors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="n">lum</span> <span class="o">=</span> <span class="mf">0.299</span> <span class="o">*</span> <span class="n">R</span> <span class="o">+</span> <span class="mf">0.587</span> <span class="o">*</span> <span class="n">G</span> <span class="o">+</span> <span class="mf">0.114</span> <span class="o">*</span> <span class="n">B</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">lum</span> <span class="o">=</span> <span class="n">block_pixels</span>  <span class="c1"># grayscale bitmap IS the luminance</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="c1"># 2. Find brightest and darkest pixels</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">fg_lum</span> <span class="o">=</span> <span class="n">lum</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">bg_lum</span> <span class="o">=</span> <span class="n">lum</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="c1"># 3. Threshold at the midpoint</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">threshold</span> <span class="o">=</span> <span class="p">(</span><span class="n">fg_lum</span> <span class="o">+</span> <span class="n">bg_lum</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="c1"># 4. Build bit pattern</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">pattern</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="k">for</span> <span class="n">each</span> <span class="n">pixel</span><span class="p">:</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        <span class="k">if</span> <span class="n">lum</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>            <span class="n">pattern</span> <span class="o">|=</span> <span class="n">bit_weight</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="c1"># 5. Select foreground color from brightest pixel,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>    <span class="c1">#    background color from darkest pixel</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>    <span class="n">fg_color</span> <span class="o">=</span> <span class="n">color_of_brightest_pixel</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="n">bg_color</span> <span class="o">=</span> <span class="n">color_of_darkest_pixel</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>    <span class="c1"># 6. Emit ANSI: set fg, set bg, write character</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fg_escape</span><span class="si">}{</span><span class="n">bg_escape</span><span class="si">}{</span><span class="n">CHAR_TABLE</span><span class="p">[</span><span class="n">pattern</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<h3 id="vectorized-rendering">Vectorized rendering<a class="headerlink" href="#vectorized-rendering" title="Permanent link">&para;</a></h3>
+<p>In practice, dapple does not loop pixel-by-pixel. The bitmap is reshaped using numpy operations:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Reshape (H, W) into (rows, cols, pixels_per_cell)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># For quadrants: reshape to (rows, 2, cols, 2) then transpose</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">block_data</span> <span class="o">=</span> <span class="n">bitmap</span><span class="p">[:</span><span class="n">rows</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="p">:</span><span class="n">cols</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">block_data</span> <span class="o">=</span> <span class="n">block_data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Vectorized max/min/threshold across all blocks simultaneously</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">fg</span> <span class="o">=</span> <span class="n">block_data</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">bg</span> <span class="o">=</span> <span class="n">block_data</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">thresh</span> <span class="o">=</span> <span class="p">(</span><span class="n">fg</span> <span class="o">+</span> <span class="n">bg</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">patterns</span> <span class="o">=</span> <span class="p">((</span><span class="n">block_data</span> <span class="o">&gt;</span> <span class="n">thresh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">BIT_WEIGHTS</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p>This processes the entire image in a handful of numpy calls rather than a Python loop per pixel.</p>
+<hr />
+<h2 id="ascii">ASCII<a class="headerlink" href="#ascii" title="Permanent link">&para;</a></h2>
+<p><strong>Cell:</strong> 1 wide x 2 tall = 2 pixels per character
+<strong>Character ramp:</strong> <code>.:-=+*#%@</code> (10 levels, dark to bright)</p>
+<p>The simplest encoding. Two vertically adjacent pixels are averaged (for aspect ratio correction), and the resulting brightness is mapped to a character from the ramp.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">CHARSET</span> <span class="o">=</span> <span class="s2">&quot; .:-=+*#%@&quot;</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">brightness_to_char</span><span class="p">(</span><span class="n">brightness</span><span class="p">,</span> <span class="n">charset</span><span class="o">=</span><span class="n">CHARSET</span><span class="p">):</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Map a 0.0-1.0 brightness to a character.&quot;&quot;&quot;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">brightness</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">charset</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.001</span><span class="p">))</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="k">return</span> <span class="n">charset</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+</code></pre></div>
+<p>The 1x2 cell compensates for terminal characters being roughly twice as tall as they are wide. Without this, images would appear vertically stretched.</p>
+<p>ASCII output uses no escape codes and works on any terminal, any font, any connection. This makes it the universal fallback.</p>
+<h3 id="available-ramps">Available ramps<a class="headerlink" href="#available-ramps" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Characters</th>
+<th>Levels</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CHARSET_STANDARD</code></td>
+<td><code>.:-=+*#%@</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td><code>CHARSET_DETAILED</code></td>
+<td><code>.'`^",:;Il!i&gt;&lt;~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&amp;8%B@$</code></td>
+<td>70</td>
+</tr>
+<tr>
+<td><code>CHARSET_BLOCKS</code></td>
+<td><code>░▒▓█</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>CHARSET_SIMPLE</code></td>
+<td><code>.oO@</code></td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p>More levels in the ramp means finer brightness gradations. The detailed ramp produces smoother gradients but requires a font where all 70 characters have distinguishable visual density.</p>
+<hr />
+<h2 id="sixel">Sixel<a class="headerlink" href="#sixel" title="Permanent link">&para;</a></h2>
+<p><strong>Protocol:</strong> DEC VT340 (1984)
+<strong>Cell:</strong> 1x1 (true pixel output)
+<strong>Color:</strong> palette-based, up to 256 colors</p>
+<p>Sixel encodes bitmaps as escape sequences that the terminal interprets as pixel data. The name comes from "six elements" -- each character encodes a column of 6 vertical pixels.</p>
+<h3 id="encoding">Encoding<a class="headerlink" href="#encoding" title="Permanent link">&para;</a></h3>
+<p>A sixel character is in the range 0x3F (<code>?</code>) to 0x7E (<code>~</code>). The character value minus 0x3F gives a 6-bit pattern where bit 0 is the top pixel and bit 5 is the bottom:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Character = chr(0x3F + pattern)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>pattern bits:
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  bit 0 = top pixel
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  bit 1
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  bit 2
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  bit 3
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  bit 4
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  bit 5 = bottom pixel
+</code></pre></div>
+<h3 id="per-color-painting-model">Per-color painting model<a class="headerlink" href="#per-color-painting-model" title="Permanent link">&para;</a></h3>
+<p>Sixel does not encode pixels left-to-right like a framebuffer. Instead, for each 6-pixel-tall band:</p>
+<ol>
+<li>Select a color (<code>#n</code>).</li>
+<li>Paint all columns that use that color in this band.</li>
+<li>Carriage return (<code>$</code>) to go back to the start of the band.</li>
+<li>Select the next color and repeat.</li>
+<li>Line feed (<code>-</code>) to advance to the next 6-pixel band.</li>
+</ol>
+<p>This per-color painting model means each band is painted multiple times, once per active color.</p>
+<h3 id="run-length-encoding">Run-length encoding<a class="headerlink" href="#run-length-encoding" title="Permanent link">&para;</a></h3>
+<p>Repeated sixel characters can be compressed:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>!&lt;count&gt;&lt;character&gt;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Example: !20?  means 20 repetitions of &#39;?&#39; (all blank column)
+</code></pre></div>
+<p>dapple uses RLE when a run exceeds 3 characters.</p>
+<h3 id="palette-definition">Palette definition<a class="headerlink" href="#palette-definition" title="Permanent link">&para;</a></h3>
+<p>Colors are defined at the start of the sequence:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>#&lt;index&gt;;2;&lt;r&gt;;&lt;g&gt;;&lt;b&gt;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>where r, g, b are percentages (0-100).
+</code></pre></div>
+<h3 id="full-sequence-structure">Full sequence structure<a class="headerlink" href="#full-sequence-structure" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ESC P q                          &lt;- DCS start
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>#0;2;0;0;0                      &lt;- define color 0 as black
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>#1;2;100;0;0                    &lt;- define color 1 as red
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>...
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>#0 ?~?~?~ $                     &lt;- paint color 0 in band, carriage return
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>#1 ~~~??? $                     &lt;- paint color 1 in band, carriage return
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>-                                &lt;- next 6-pixel band
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>...
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>ESC \                            &lt;- string terminator
+</code></pre></div>
+<h3 id="quantization">Quantization<a class="headerlink" href="#quantization" title="Permanent link">&para;</a></h3>
+<p>dapple uses uniform color quantization: each RGB channel is divided into <code>cbrt(max_colors)</code> levels, producing a uniform color cube. For grayscale, up to 64 gray levels are used.</p>
+<hr />
+<h2 id="kitty">Kitty<a class="headerlink" href="#kitty" title="Permanent link">&para;</a></h2>
+<p><strong>Protocol:</strong> Kitty graphics protocol (modern)
+<strong>Cell:</strong> 1x1 (true pixel output)
+<strong>Color:</strong> 24-bit RGB (or 8-bit grayscale via PNG)</p>
+<p>The Kitty protocol transmits image data as base64-encoded payloads inside escape sequences. It supports PNG, raw RGB, and raw RGBA formats.</p>
+<h3 id="escape-sequence-structure">Escape sequence structure<a class="headerlink" href="#escape-sequence-structure" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ESC _G &lt;key&gt;=&lt;value&gt;,... ; &lt;base64 data&gt; ESC \
+</code></pre></div>
+<p>Key parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a</code></td>
+<td><code>T</code></td>
+<td>Action: transmit and display</td>
+</tr>
+<tr>
+<td><code>f</code></td>
+<td><code>100</code></td>
+<td>Format: PNG</td>
+</tr>
+<tr>
+<td><code>f</code></td>
+<td><code>24</code></td>
+<td>Format: raw RGB</td>
+</tr>
+<tr>
+<td><code>f</code></td>
+<td><code>32</code></td>
+<td>Format: raw RGBA</td>
+</tr>
+<tr>
+<td><code>o</code></td>
+<td><code>z</code></td>
+<td>Compression: zlib</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td><code>W</code></td>
+<td>Source width (for raw formats)</td>
+</tr>
+<tr>
+<td><code>v</code></td>
+<td><code>H</code></td>
+<td>Source height (for raw formats)</td>
+</tr>
+<tr>
+<td><code>c</code></td>
+<td><code>N</code></td>
+<td>Display width in columns</td>
+</tr>
+<tr>
+<td><code>r</code></td>
+<td><code>N</code></td>
+<td>Display height in rows</td>
+</tr>
+<tr>
+<td><code>m</code></td>
+<td><code>1</code></td>
+<td>More data chunks follow</td>
+</tr>
+<tr>
+<td><code>m</code></td>
+<td><code>0</code></td>
+<td>Last (or only) chunk</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chunking">Chunking<a class="headerlink" href="#chunking" title="Permanent link">&para;</a></h3>
+<p>Base64 data is split into chunks of up to 4096 bytes. The first chunk carries all parameters; continuation chunks only carry <code>m=&lt;0|1&gt;</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># First chunk</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">ESC_G</span> <span class="n">a</span><span class="o">=</span><span class="n">T</span><span class="p">,</span><span class="n">f</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">base64</span> <span class="n">chunk</span> <span class="mi">1</span><span class="o">&gt;</span> <span class="n">ESC</span> \
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1"># Continuation</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">ESC_G</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">base64</span> <span class="n">chunk</span> <span class="mi">2</span><span class="o">&gt;</span> <span class="n">ESC</span> \
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="c1"># Final chunk</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">ESC_G</span> <span class="n">m</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">base64</span> <span class="n">chunk</span> <span class="n">N</span><span class="o">&gt;</span> <span class="n">ESC</span> \
+</code></pre></div>
+<h3 id="png-vs-raw-formats">PNG vs raw formats<a class="headerlink" href="#png-vs-raw-formats" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>PNG</strong> (<code>f=100</code>): compressed, smallest payload. dapple uses PIL if available, otherwise a minimal built-in PNG encoder (zlib-compressed, no filtering).</li>
+<li><strong>RGB</strong> (<code>f=24</code>): uncompressed pixel data, <code>W * H * 3</code> bytes. Can be zlib-compressed with <code>o=z</code>.</li>
+<li><strong>RGBA</strong> (<code>f=32</code>): same as RGB but with alpha channel, <code>W * H * 4</code> bytes.</li>
+</ul>
+<p>PNG is the default because it produces the smallest output and is universally supported by Kitty-compatible terminals.</p>
+<hr />
+<h2 id="fingerprint">Fingerprint<a class="headerlink" href="#fingerprint" title="Permanent link">&para;</a></h2>
+<p><strong>Cell:</strong> configurable (default 8x16)
+<strong>Method:</strong> glyph correlation matching
+<strong>Color:</strong> none (grayscale only)</p>
+<p>Fingerprint is an experimental renderer that finds the Unicode character whose rendered appearance most closely matches each region of the input bitmap.</p>
+<h3 id="the-algorithm_1">The algorithm<a class="headerlink" href="#the-algorithm_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_best_glyph</span><span class="p">(</span><span class="n">input_region</span><span class="p">,</span> <span class="n">glyph_bitmaps</span><span class="p">,</span> <span class="n">glyphs</span><span class="p">):</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the glyph that best matches the input region.&quot;&quot;&quot;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="c1"># input_region: flattened (cell_width * cell_height,) vector</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="c1"># glyph_bitmaps: (N, cell_width * cell_height) array</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="c1"># Compute MSE between input and each glyph</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">diff</span> <span class="o">=</span> <span class="n">input_region</span> <span class="o">-</span> <span class="n">glyph_bitmaps</span>  <span class="c1"># broadcasts to (N, pixels)</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span><span class="n">diff</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (N,) MSE per glyph</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="c1"># Pick the closest glyph</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    <span class="n">best_idx</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    <span class="k">return</span> <span class="n">glyphs</span><span class="p">[</span><span class="n">best_idx</span><span class="p">]</span>
+</code></pre></div>
+<h3 id="glyph-preparation">Glyph preparation<a class="headerlink" href="#glyph-preparation" title="Permanent link">&para;</a></h3>
+<p>On first use, each candidate character is rendered to a small bitmap using PIL's <code>ImageDraw.text</code>. The glyph bitmap has white background with black text, inverted so ink = 1.0 and background = 0.0. All glyph bitmaps are stacked into a single numpy array for vectorized distance computation.</p>
+<p>The glyph cache is keyed by <code>(glyph_set, cell_width, cell_height, font_path)</code> and persists for the process lifetime.</p>
+<h3 id="font-dependence">Font dependence<a class="headerlink" href="#font-dependence" title="Permanent link">&para;</a></h3>
+<p>The output is determined by how the font renders each character at the given cell size. Different fonts produce different "best match" selections for the same input. A monospace font with clean, distinct glyph shapes tends to produce better results than a proportional font.</p>
+<p>dapple tries to load DejaVu Sans Mono or Consolas, falling back to PIL's built-in bitmap font.</p>
+<h3 id="distance-metrics">Distance metrics<a class="headerlink" href="#distance-metrics" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>MSE</strong> (mean squared error): <code>mean((input - glyph)^2)</code>. Penalizes large differences heavily. Default.</li>
+<li><strong>MAE</strong> (mean absolute error): <code>mean(|input - glyph|)</code>. More tolerant of outliers.</li>
+</ul>
+<h3 id="vectorized-matching">Vectorized matching<a class="headerlink" href="#vectorized-matching" title="Permanent link">&para;</a></h3>
+<p>Rather than looping over each cell, dapple extracts all cells at once via numpy reshape/transpose, then computes all distances in a single broadcast operation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># regions: (R, P) -- R cells, P pixels each</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># glyph_bitmaps: (G, P) -- G glyphs, P pixels each</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">diff</span> <span class="o">=</span> <span class="n">regions</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">glyph_bitmaps</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (R, G, P)</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">distances</span> <span class="o">=</span> <span class="p">(</span><span class="n">diff</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>                      <span class="c1"># (R, G)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">best_indices</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>                    <span class="c1"># (R,)</span>
+</code></pre></div>
+<p>This makes fingerprint rendering practical even for large images and extended glyph sets.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>
