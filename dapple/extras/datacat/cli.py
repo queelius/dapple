@@ -297,12 +297,26 @@ def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
     char_h = args.height or max(10, term_lines // 3)
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
 
+    from dapple.extras.vizlib.colors import COLOR_PALETTE
+
     if args.spark:
         values = extract_field_values(data, args.spark)
         canvas = sparkline(values, width=px_w, height=px_h, color=color)
     elif args.plot:
-        values = extract_field_values(data, args.plot)
-        canvas = line_plot(values, width=px_w, height=px_h, color=color)
+        # Support comma-separated field paths for multi-series
+        field_paths = [p.strip() for p in args.plot.split(",")]
+        primary_values = extract_field_values(data, field_paths[0])
+        if len(field_paths) > 1:
+            extra_series = []
+            for i, fp in enumerate(field_paths[1:]):
+                s_values = extract_field_values(data, fp)
+                s_color = COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]
+                extra_series.append((s_values, s_color))
+            canvas = line_plot(
+                primary_values, width=px_w, height=px_h, color=color, series=extra_series,
+            )
+        else:
+            canvas = line_plot(primary_values, width=px_w, height=px_h, color=color)
     elif args.bar:
         labels, counts = extract_field_categories(data, args.bar)
         canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)

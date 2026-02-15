@@ -529,9 +529,9 @@ def main() -> None:
     # Collect all expressions from args.expressions and remaining
     all_expressions: list[str] = []
     if args.expressions:
-        all_expressions.extend(args.expressions)
+        all_expressions.extend(e for e in args.expressions if e)
     if remaining:
-        all_expressions.extend(remaining)
+        all_expressions.extend(e for e in remaining if e)
 
     # Track if we read stdin content (to avoid double-reading)
     stdin_content: str | None = None

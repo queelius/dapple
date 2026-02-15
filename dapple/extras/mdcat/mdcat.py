@@ -180,23 +180,11 @@ class DappleImageItem(ImageItem):
 
         try:
             pil_img: Image.Image = Image.open(local_path)
-
-            # Resize to fit width
-            pixel_width = self._image_width * self._renderer.cell_width
-            w, h = pil_img.size
-            aspect = h / w
-            new_w = pixel_width
-            new_h = int(new_w * aspect)
-
-            # Aspect ratio correction for terminal cells
-            TERMINAL_CELL_RATIO = 0.5
-            cell_aspect = (self._renderer.cell_height / self._renderer.cell_width) * TERMINAL_CELL_RATIO
-            new_h = int(new_h * cell_aspect)
-
-            if new_h > 0:
-                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
             canvas = from_pil(pil_img)
+
+            # Size for display width
+            from dapple.layout import terminal_fit
+            canvas, _ = terminal_fit(canvas, self._renderer, width=self._image_width)
 
             # Render to string
             buf = StringIO()

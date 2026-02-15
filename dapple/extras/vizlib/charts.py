@@ -78,30 +78,45 @@ def line_plot(
     height: int,
     color: tuple[float, float, float] | None = None,
     show_axes: bool = True,
+    series: list[tuple[Sequence[float], tuple[float, float, float] | None]] | None = None,
 ) -> Canvas:
-    """Render a line plot with optional axes.
+    """Render a line plot with optional axes and multiple series.
 
     Args:
-        values: Numeric data points.
+        values: Numeric data points (primary series).
         width: Bitmap width in pixels.
         height: Bitmap height in pixels.
-        color: RGB color tuple (0-1). Defaults to cyan.
+        color: RGB color tuple (0-1). Defaults to cycling palette.
         show_axes: Draw a baseline axis at y=0 if in range.
+        series: Additional series as (values, color) tuples. Colors auto-cycle
+                from COLOR_PALETTE if None. When provided, `values` and `color`
+                are used as the first series.
 
     Returns:
         Canvas with the line plot rendered.
     """
-    if len(values) == 0:
+    # Build full list of (values, color) series
+    all_series: list[tuple[Sequence[float], tuple[float, float, float]]] = []
+
+    if series is not None:
+        # Multi-series mode: primary values + additional series
+        all_series.append((values, color or COLOR_PALETTE[0]))
+        for i, (s_vals, s_color) in enumerate(series):
+            all_series.append((s_vals, s_color or COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]))
+    else:
+        all_series.append((values, color or COLOR_PALETTE[0]))
+
+    # Check for any data
+    if all(len(s[0]) == 0 for s in all_series):
         return _empty_canvas(width, height)
 
-    vals = np.array(values, dtype=np.float64)
-    color = color or COLOR_PALETTE[0]
     axis_color = (0.5, 0.5, 0.5)
-
     bitmap = np.zeros((height, width), dtype=np.float32)
     colors = np.zeros((height, width, 3), dtype=np.float32)
 
-    v_min, v_max = float(vals.min()), float(vals.max())
+    # Find global min/max across all series
+    all_vals = np.concatenate([np.array(s[0], dtype=np.float64) for s in all_series if len(s[0]) > 0])
+    v_min, v_max = float(all_vals.min()), float(all_vals.max())
     if v_max == v_min:
         v_min -= 0.5
         v_max += 0.5
@@ -113,22 +128,26 @@ def line_plot(
         bitmap[zero_row, :] = 0.3
         colors[zero_row, :] = axis_color
 
-    # Map and draw the line
-    normalized = (vals - v_min) / (v_max - v_min)
-    pixel_rows = ((1 - normalized) * (height - 1)).astype(int)
-    pixel_cols = np.linspace(0, width - 1, len(vals)).astype(int)
+    # Draw each series
+    for s_vals, s_color in all_series:
+        if len(s_vals) == 0:
+            continue
+        vals = np.array(s_vals, dtype=np.float64)
+        normalized = (vals - v_min) / (v_max - v_min)
+        pixel_rows = ((1 - normalized) * (height - 1)).astype(int)
+        pixel_cols = np.linspace(0, width - 1, len(vals)).astype(int)
 
-    for i in range(len(vals)):
-        col = pixel_cols[i]
-        row = np.clip(pixel_rows[i], 0, height - 1)
-        if 0 <= col < width:
-            bitmap[row, col] = 1.0
-            colors[row, col] = color
+        for i in range(len(vals)):
+            col = pixel_cols[i]
+            row = np.clip(pixel_rows[i], 0, height - 1)
+            if 0 <= col < width:
+                bitmap[row, col] = 1.0
+                colors[row, col] = s_color
 
-        if i > 0:
-            prev_row = np.clip(pixel_rows[i - 1], 0, height - 1)
-            prev_col = pixel_cols[i - 1]
-            _draw_line(bitmap, colors, prev_col, prev_row, col, row, color)
+            if i > 0:
+                prev_row = np.clip(pixel_rows[i - 1], 0, height - 1)
+                prev_col = pixel_cols[i - 1]
+                _draw_line(bitmap, colors, prev_col, prev_row, col, row, s_color)
 
     return Canvas(bitmap, colors=colors)
 

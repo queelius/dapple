@@ -42,7 +42,10 @@ class TestCanImport:
 class TestDetectExtras:
     def test_returns_all_keys(self):
         result = detect_extras()
-        expected_keys = {"imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datacat", "funcat"}
+        expected_keys = {
+            "imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datacat", "funcat",
+            "compcat", "thumbcat", "ansicat", "diffcat", "storycat", "plotcat", "dashcat",
+        }
         assert set(result.keys()) == expected_keys
 
     def test_all_values_are_bool(self):
@@ -51,11 +54,13 @@ class TestDetectExtras:
             assert isinstance(val, bool)
 
     def test_zero_dep_extras_always_available(self):
-        """csvcat, datacat, funcat have no extra deps — always True."""
+        """csvcat, datacat, funcat, ansicat, plotcat have no extra deps — always True."""
         result = detect_extras()
         assert result["csvcat"] is True
         assert result["datacat"] is True
         assert result["funcat"] is True
+        assert result["ansicat"] is True
+        assert result["plotcat"] is True
 
 
 # ─── generate_skill ──────────────────────────────────────────────────────────

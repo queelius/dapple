@@ -5,7 +5,6 @@ Core implementation for rendering images to the terminal using dapple.
 
 from __future__ import annotations
 
-import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -78,8 +77,7 @@ def imgcat(
         >>> imgcat("photo.jpg", renderer="braille", dither=True)
     """
     try:
-        from PIL import Image
-        from dapple.adapters.pil import from_pil, load_image
+        from dapple.adapters.pil import load_image
     except ImportError:
         raise ImportError(
             "PIL is required for imgcat. Install with: pip install dapple[imgcat]"
@@ -87,6 +85,7 @@ def imgcat(
 
     from dapple.canvas import Canvas
     from dapple.extras.common import apply_preprocessing
+    from dapple.layout import terminal_fit
 
     options = ImgcatOptions(
         renderer=renderer,
@@ -102,42 +101,12 @@ def imgcat(
     # Get renderer
     rend = get_renderer(renderer, options)
 
-    # Determine output width
-    if width:
-        char_width = width
-    else:
-        terminal_size = shutil.get_terminal_size(fallback=(80, 24))
-        char_width = terminal_size.columns
-
-    # Calculate pixel dimensions
-    CELL_PIXEL_WIDTH = 8
-    if renderer in ("sixel", "kitty"):
-        pixel_width = char_width * CELL_PIXEL_WIDTH
-    else:
-        pixel_width = char_width * rend.cell_width
-    pixel_height = height * rend.cell_height if height else None
-
-    # Load image
+    # Load image at original size
     path = Path(image_path)
-    canvas = load_image(path, width=pixel_width, height=pixel_height)
+    canvas = load_image(path)
 
-    # Correct aspect ratio for character-based renderers
-    # Pixel renderers (sixel, kitty) don't need aspect correction
-    needs_aspect_correction = renderer not in ("sixel", "kitty")
-    if renderer == "auto":
-        from dapple.auto import detect_terminal, Protocol
-        info = detect_terminal()
-        needs_aspect_correction = info.protocol not in (Protocol.KITTY, Protocol.SIXEL)
-
-    if needs_aspect_correction:
-        TERMINAL_CELL_RATIO = 0.5
-        cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
-        pil_img = canvas.to_pil()
-        w, h = pil_img.size
-        new_h = int(h * cell_aspect)
-        if new_h > 0:
-            pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
-            canvas = from_pil(pil_img)
+    # Size for terminal
+    canvas, rend = terminal_fit(canvas, rend, width=width)
 
     # Apply preprocessing
     if contrast or dither or invert:
@@ -220,11 +189,24 @@ def main() -> None:
         "--no-color", action="store_true",
         help="Disable color output"
     )
+    parser.add_argument(
+        "--pager", action="store_true",
+        help="Pipe output through a pager (less -R)"
+    )
 
     args = parser.parse_args()
 
-    # Main command
-    if not args.images:
+    # Handle stdin ("-" argument)
+    from dapple.extras.common import paged_output, stdin_to_tempfile
+
+    images = list(args.images) if args.images else []
+    stdin_ctx = None
+    if images and str(images[0]) == "-":
+        stdin_ctx = stdin_to_tempfile(suffix=".png")
+        stdin_path = stdin_ctx.__enter__()
+        images[0] = stdin_path
+
+    if not images:
         parser.print_help()
         sys.exit(1)
 
@@ -238,35 +220,39 @@ def main() -> None:
     errors: list[str] = []
     exit_code = 0
     try:
-        for image_path in args.images:
-            if not image_path.exists():
-                errors.append(f"{image_path}: File not found")
-                continue
+        with paged_output(dest, pager=args.pager) as output:
+            for image_path in images:
+                image_path = Path(image_path)
+                if not image_path.exists():
+                    errors.append(f"{image_path}: File not found")
+                    continue
 
-            try:
-                imgcat(
-                    image_path,
-                    renderer=args.renderer,
-                    width=args.width,
-                    height=args.height,
-                    dither=args.dither,
-                    contrast=args.contrast,
-                    invert=args.invert,
-                    grayscale=args.grayscale,
-                    no_color=args.no_color,
-                    dest=dest,
-                )
-            except ImportError as e:
-                errors.append(f"{image_path.name}: Missing dependency: {e}")
-                continue
-            except Exception as e:
-                errors.append(f"{image_path}: {e}")
-                continue
+                try:
+                    imgcat(
+                        image_path,
+                        renderer=args.renderer,
+                        width=args.width,
+                        height=args.height,
+                        dither=args.dither,
+                        contrast=args.contrast,
+                        invert=args.invert,
+                        grayscale=args.grayscale,
+                        no_color=args.no_color,
+                        dest=output,
+                    )
+                except ImportError as e:
+                    errors.append(f"{image_path.name}: Missing dependency: {e}")
+                    continue
+                except Exception as e:
+                    errors.append(f"{image_path}: {e}")
+                    continue
     except KeyboardInterrupt:
         exit_code = 130
     finally:
         if args.output:
             dest.close()
+        if stdin_ctx:
+            stdin_ctx.__exit__(None, None, None)
 
     if errors:
         for err in errors:

@@ -6,11 +6,19 @@ imgcat, pdfcat, mdcat, and other extras.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
+import subprocess
+import sys
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterator
 
 import numpy as np
 
 if TYPE_CHECKING:
+    from typing import TextIO
+
     from numpy.typing import NDArray
 
     from dapple.renderers import Renderer
@@ -145,3 +153,50 @@ def available_fields(records: list) -> list[str]:
         if isinstance(rec, dict):
             keys.update(rec.keys())
     return sorted(keys)
+
+
+@contextmanager
+def paged_output(dest: TextIO, pager: bool = False) -> Iterator[TextIO]:
+    """Wrap output in a pager (less -R) if requested.
+
+    Args:
+        dest: The output stream.
+        pager: Whether to pipe through a pager.
+
+    Yields:
+        The output stream (pager stdin or original dest).
+    """
+    if not pager or dest is not sys.stdout:
+        yield dest
+        return
+
+    proc = subprocess.Popen(
+        [os.environ.get("PAGER", "less"), "-R"],
+        stdin=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        yield proc.stdin  # type: ignore[misc]
+    finally:
+        proc.stdin.close()  # type: ignore[union-attr]
+        proc.wait()
+
+
+@contextmanager
+def stdin_to_tempfile(suffix: str = ".bin") -> Iterator[Path]:
+    """Read binary stdin to a temp file, yield its path.
+
+    Args:
+        suffix: File extension for the temp file.
+
+    Yields:
+        Path to the temporary file containing stdin data.
+    """
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+        f.write(sys.stdin.buffer.read())
+        f.flush()
+        path = Path(f.name)
+    try:
+        yield path
+    finally:
+        path.unlink(missing_ok=True)

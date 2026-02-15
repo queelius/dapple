@@ -185,6 +185,32 @@ class Canvas:
         return self._bitmap[key]
 
     # Builder methods
+    def fit(
+        self,
+        renderer: Renderer,
+        *,
+        width: int | None = None,
+        height: int | None = None,
+        cell_ratio: float = 0.5,
+    ) -> Canvas:
+        """Return new Canvas resized to fit character dimensions.
+
+        For character renderers (braille, sextants, etc.): resizes bitmap
+        to pixel dimensions and applies aspect-ratio correction.
+        For pixel renderers (sixel, kitty): returns self unchanged.
+
+        Args:
+            renderer: The renderer determining cell dimensions.
+            width: Target width in characters (None = terminal width).
+            height: Target height in characters (None = auto from aspect).
+            cell_ratio: Terminal cell aspect ratio (default 0.5).
+
+        Returns:
+            New Canvas resized to fit the renderer.
+        """
+        from dapple.layout import _fit_canvas
+        return _fit_canvas(self, renderer, width=width, height=height, cell_ratio=cell_ratio)
+
     def with_renderer(self, renderer: Renderer) -> Canvas:
         """Create a new Canvas with a different default renderer.
 

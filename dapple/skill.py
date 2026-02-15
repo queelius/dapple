@@ -29,6 +29,13 @@ _EXTRAS: dict[str, tuple[tuple[str, ...], str]] = {
     "csvcat": ((), "CSV/TSV viewer & plotter"),
     "datacat": ((), "JSON/JSONL viewer & plotter"),
     "funcat": ((), "Math expression plotter"),
+    "compcat": (("PIL",), "Renderer comparison"),
+    "thumbcat": (("PIL",), "Image contact sheet"),
+    "ansicat": ((), "ANSI art viewer"),
+    "diffcat": (("PIL",), "Visual image diff"),
+    "storycat": (("PIL",), "Video storyboard grid"),
+    "plotcat": ((), "Faceted data plots"),
+    "dashcat": (("yaml",), "YAML-driven dashboard"),
 }
 
 
@@ -135,15 +142,121 @@ cat data.jsonl | datacat                # pipe from stdin
 """,
     "funcat": """\
 ### funcat — Math Expression Plotter
-Plot mathematical expressions in the terminal.
+Plot mathematical expressions and parametric curves in the terminal.
 Best renderer: **braille** (math plots are pure line art on empty background).
 
+**Basic plots:**
 ```bash
 funcat "sin(x)"                         # basic plot (braille)
-funcat "sin(x)" "cos(x)"               # overlay multiple
+funcat "sin(x)" "cos(x)" --legend      # overlay multiple with legend
 funcat "x**2 - 1" --xmin -5 --xmax 5   # custom domain
 funcat "exp(-x**2)" -r braille -w 80   # explicit braille
-echo "sin(x)" | funcat                  # from stdin
+```
+
+**Parametric curves** (functions of t, default t range 0 to 2pi):
+```bash
+funcat -p "cos(t),sin(t)"              # circle
+funcat -p "t*cos(t),t*sin(t)"          # spiral
+funcat -p "cos(t),sin(t)" --tmin 0 --tmax 3.14  # half circle
+```
+
+**Chaining** (`--json` pipes plot state so multiple curves compose):
+```bash
+funcat "sin(x)" --json | funcat "cos(x)" --color red       # two colors
+funcat -p "cos(t),sin(t)" --json \\
+  | funcat -p "0.3*cos(t)+0.3,0.3*sin(t)+0.3" --color blue  # composite figure
+```
+""",
+    "compcat": """\
+### compcat — Renderer Comparison
+Show the same image rendered with multiple renderers side by side.
+Best for comparing visual quality across renderers.
+
+```bash
+compcat photo.jpg braille sextants quadrants    # compare renderers
+compcat photo.jpg braille sextants -w 80        # control width
+```
+""",
+    "thumbcat": """\
+### thumbcat — Image Contact Sheet
+Display multiple images as a thumbnail grid in the terminal.
+Best renderer: **sextants** (photographic thumbnails).
+
+```bash
+thumbcat photos/*.jpg --cols 4 -w 120      # 4-column grid
+thumbcat *.png --cols 3 --no-titles         # no filenames
+thumbcat -r sextants -w 80 img1.png img2.png
+```
+""",
+    "ansicat": """\
+### ansicat — ANSI Art Viewer
+View ANSI art (.ans) files in the terminal, re-rendered through
+dapple renderers. Best renderer: **sextants** (fills colored regions).
+
+```bash
+ansicat artwork.ans -r sextants -w 80       # re-render ANSI art
+ansicat artwork.ans -r braille              # braille style
+cat artwork.ans | ansicat -                 # from stdin
+```
+""",
+    "diffcat": """\
+### diffcat — Visual Image Diff
+Compare two images visually in the terminal.
+Best renderer: **sextants** (photographic content).
+
+```bash
+diffcat before.png after.png                # side-by-side (default)
+diffcat before.png after.png --mode overlay # difference heatmap
+diffcat before.png after.png --mode highlight  # highlight changes
+diffcat -w 100 a.png b.png                  # wider output
+```
+""",
+    "storycat": """\
+### storycat — Video Storyboard Grid
+Extract video frames and display as a storyboard grid. Requires ffmpeg.
+Best renderer: **sextants** (video frames are photographic).
+
+```bash
+storycat video.mp4 --cols 5 --every 10s    # every 10 seconds
+storycat video.mp4 --frames 1-20 --cols 4  # specific frames
+storycat -r sextants -w 120 clip.mp4       # wide storyboard
+```
+""",
+    "plotcat": """\
+### plotcat — Faceted Data Plots
+Group data by a column and create a grid of small-multiple charts.
+Best renderer: **braille** (charts are line art).
+
+```bash
+plotcat data.csv --facet region --plot line -y sales
+plotcat data.jsonl --facet category --plot bar -y type
+plotcat data.csv --facet group --plot spark -y value
+plotcat data.csv --facet group --plot histogram -y score
+```
+""",
+    "dashcat": """\
+### dashcat — YAML Dashboard
+Build terminal dashboards from a YAML layout file.
+Charts use **braille** by default.
+
+```bash
+dashcat layout.yaml                         # render dashboard
+dashcat layout.yaml -w 120                  # wider dashboard
+```
+
+YAML format:
+```yaml
+rows:
+  - cells:
+    - type: sparkline
+      source: metrics.jsonl
+      query: .cpu
+      title: CPU Usage
+    - type: bar_chart
+      source: sales.csv
+      x: region
+      y: revenue
+      title: Revenue
 ```
 """,
 }
@@ -198,14 +311,19 @@ _HEADER = """\
 name: dapple
 description: >-
   Use when the user asks to display, preview, or view files visually in their
-  terminal — images, PDFs, markdown, video, CSV, JSON, or math plots. Pick the
-  right tool by input type. Output is terminal text meant for the user to read.
+  terminal, OR to plot mathematical functions, parametric curves, equations, or
+  data charts. Covers: images, PDFs, markdown, video, CSV, JSON, math/parametric
+  plots (funcat), ANSI art, image diffs, contact sheets, storyboards, dashboards,
+  renderer comparisons, or faceted data plots. Tools: imgcat, pdfcat, mdcat,
+  vidcat, csvcat, datacat, funcat, compcat, thumbcat, ansicat, diffcat, storycat,
+  plotcat, dashcat. Output is terminal text meant for the user to read.
 ---
 
 # dapple — Terminal Graphics Toolkit
 
 Render files and data visually in the user's terminal using Unicode art
-(braille, blocks, sextants) or pixel protocols (sixel, kitty).
+(braille, blocks, sextants) or pixel protocols (sixel, kitty). Also plot
+mathematical functions, parametric curves, and data charts.
 
 The output is terminal text that the user sees. You can see it too, but these
 tools are meant for **human viewing** — do not use them to analyze file

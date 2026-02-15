@@ -181,6 +181,7 @@ def _run_plot_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> Non
     """Render a chart from CSV data using vizlib."""
     from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
     from dapple.extras.vizlib.charts import bar_chart, heatmap, histogram, line_plot, sparkline
+    from dapple.extras.vizlib.colors import COLOR_PALETTE
 
     renderer = get_renderer(args.renderer)
     term_cols, term_lines = get_terminal_size()
@@ -192,8 +193,18 @@ def _run_plot_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> Non
         values = extract_numeric(data, args.spark)
         canvas = sparkline(values, width=px_w, height=px_h)
     elif args.plot:
-        values = extract_numeric(data, args.plot)
-        canvas = line_plot(values, width=px_w, height=px_h)
+        # Support comma-separated column names for multi-series
+        col_names = [c.strip() for c in args.plot.split(",")]
+        primary_values = extract_numeric(data, col_names[0])
+        if len(col_names) > 1:
+            extra_series = []
+            for i, col in enumerate(col_names[1:]):
+                s_values = extract_numeric(data, col)
+                s_color = COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]
+                extra_series.append((s_values, s_color))
+            canvas = line_plot(primary_values, width=px_w, height=px_h, series=extra_series)
+        else:
+            canvas = line_plot(primary_values, width=px_w, height=px_h)
     elif args.bar:
         labels, counts = extract_categories(data, args.bar)
         canvas = bar_chart(labels, counts, width=px_w, height=px_h)

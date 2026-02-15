@@ -5,7 +5,6 @@ Core implementation for rendering PDF pages to the terminal using dapple.
 
 from __future__ import annotations
 
-import shutil
 import sys
 import tempfile
 from dataclasses import dataclass, field
@@ -249,24 +248,12 @@ def pdfcat(
         print(f"Error: Failed to render PDF: {path}", file=sys.stderr)
         return False
 
-    # Determine output width
-    if width:
-        char_width = width
-    else:
-        terminal_size = shutil.get_terminal_size(fallback=(80, 24))
-        char_width = terminal_size.columns
+    from dapple.layout import terminal_fit
 
     output = dest if dest is not None else sys.stdout
 
     # Print header
     output.write(f"# {path.name}: {result.total_pages} pages\n")
-
-    TERMINAL_CELL_RATIO = 0.5
-
-    # For kitty, configure renderer to use terminal columns for scaling
-    if renderer == "kitty":
-        from dapple import kitty as kitty_renderer
-        rend = kitty_renderer(columns=char_width)
 
     try:
         for page in result.pages:
@@ -275,37 +262,10 @@ def pdfcat(
 
             # Load page image
             pil_img: Image.Image = Image.open(page.image_path)
-
-            # For kitty, keep image at original DPI-rendered size
-            # The kitty protocol's columns parameter handles display scaling
-            if renderer == "kitty":
-                # Don't resize - kitty will scale to fit columns
-                pass
-            else:
-                # Calculate dimensions for other renderers
-                if renderer == "sixel":
-                    # Sixel: use reasonable pixel width
-                    CELL_PIXEL_WIDTH = 10
-                    pixel_width = char_width * CELL_PIXEL_WIDTH
-                else:
-                    pixel_width = char_width * rend.cell_width
-
-                # Resize to fit width while maintaining aspect ratio
-                w, h = pil_img.size
-                aspect = h / w
-                new_w = pixel_width
-                new_h = int(new_w * aspect)
-                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
-                # Aspect ratio correction for character renderers
-                if renderer not in ("sixel", "kitty"):
-                    cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
-                    w, h = pil_img.size
-                    new_h = int(h * cell_aspect)
-                    if new_h > 0:
-                        pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
-
             canvas = from_pil(pil_img)
+
+            # Size for terminal
+            canvas, rend = terminal_fit(canvas, rend, width=width)
 
             # Apply preprocessing
             if contrast or dither or invert:

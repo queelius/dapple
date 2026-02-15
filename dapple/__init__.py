@@ -64,6 +64,14 @@ from dapple.preprocess import (
     rotate,
 )
 
+# Layout
+from dapple.layout import (
+    Frame,
+    Grid,
+    terminal_columns,
+    terminal_fit,
+)
+
 # Auto-detection
 from dapple.auto import (
     Protocol,
@@ -109,6 +117,11 @@ __all__ = [
     "crop",
     "flip",
     "rotate",
+    # Layout
+    "Frame",
+    "Grid",
+    "terminal_columns",
+    "terminal_fit",
     # Auto-detection
     "Protocol",
     "TerminalInfo",

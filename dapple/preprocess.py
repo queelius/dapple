@@ -199,15 +199,12 @@ def threshold(
     return (bitmap > level).astype(np.float32)
 
 
-def resize(
+def _resize_2d(
     bitmap: NDArray[np.floating],
     new_height: int,
     new_width: int,
 ) -> NDArray[np.floating]:
-    """Resize bitmap using simple bilinear interpolation.
-
-    This is a basic implementation without external dependencies.
-    For better quality, use the PIL adapter.
+    """Resize a 2D array using bilinear interpolation.
 
     Args:
         bitmap: 2D array of shape (H, W), values 0.0-1.0
@@ -215,7 +212,7 @@ def resize(
         new_width: Target width
 
     Returns:
-        Resized bitmap of shape (new_height, new_width)
+        Resized array of shape (new_height, new_width)
     """
     old_h, old_w = bitmap.shape
 
@@ -249,6 +246,37 @@ def resize(
             result[y, x] = top * (1 - y_frac[y]) + bottom * y_frac[y]
 
     return result
+
+
+def resize(
+    bitmap: NDArray[np.floating],
+    new_height: int,
+    new_width: int,
+) -> NDArray[np.floating]:
+    """Resize bitmap using simple bilinear interpolation.
+
+    This is a basic implementation without external dependencies.
+    For better quality, use the PIL adapter.
+
+    Supports both 2D bitmaps (H, W) and 3D color arrays (H, W, 3).
+    For 3D arrays, each channel is resized independently.
+
+    Args:
+        bitmap: 2D array (H, W) or 3D array (H, W, 3), values 0.0-1.0
+        new_height: Target height
+        new_width: Target width
+
+    Returns:
+        Resized array of shape (new_height, new_width) or
+        (new_height, new_width, 3)
+    """
+    if bitmap.ndim == 3:
+        channels = [
+            _resize_2d(bitmap[:, :, c], new_height, new_width)
+            for c in range(bitmap.shape[2])
+        ]
+        return np.stack(channels, axis=2)
+    return _resize_2d(bitmap, new_height, new_width)
 
 
 def crop(
