@@ -381,3 +381,19 @@ class TestMdcatCLI:
         )
         assert result.returncode != 0
 
+
+class TestImageErrors:
+    def test_broken_image_ref_warns(self, tmp_path):
+        """Markdown with broken image ref should warn, not crash."""
+        import subprocess
+        import sys
+
+        md = tmp_path / "doc.md"
+        md.write_text("# Title\n\n![img](nonexistent.png)\n")
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.mdcat.mdcat", str(md),
+             "-r", "braille", "-w", "40"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0  # should not crash
+

@@ -380,6 +380,19 @@ class TestCLI:
         # Numeric headers
         assert "0" in result.stdout
 
+    def test_backslash_t_parsed_as_tab(self, tmp_path):
+        """--delimiter '\\t' should work as tab delimiter."""
+        tsv = tmp_path / "data.tsv"
+        tsv.write_text("a\tb\n1\t2\n")
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.csvcat.cli",
+             str(tsv), "--delimiter", r"\t"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "a" in result.stdout
+        assert "b" in result.stdout
+
     def test_no_input_error(self):
         # No file, TTY stdin => should exit with error
         # We can't really test TTY detection, but we can test the file path

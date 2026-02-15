@@ -210,6 +210,10 @@ class DappleImageItem(ImageItem):
                     yield Segment('\n')
 
         except Exception as e:
+            print(
+                f"Warning: Failed to render image: {e}",
+                file=sys.stderr,
+            )
             yield self._placeholder(reason=str(e))
 
     def _placeholder(self, reason: str | None = None) -> Text:

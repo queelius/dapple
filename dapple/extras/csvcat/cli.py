@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Iterator, TextIO
 
+from dapple.extras.common import unescape_delimiter
 from dapple.extras.csvcat.csvcat import (
     CsvData,
     extract_categories,
@@ -228,9 +229,10 @@ def main() -> None:
                 continue
 
             try:
+                delimiter = unescape_delimiter(args.delimiter) if args.delimiter else None
                 data = read_csv(
                     source,
-                    delimiter=args.delimiter,
+                    delimiter=delimiter,
                     has_header=not args.no_header,
                 )
 

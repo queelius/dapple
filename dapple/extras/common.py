@@ -120,3 +120,28 @@ def apply_preprocessing(
         bitmap = invert_fn(bitmap)
 
     return bitmap
+
+
+def unescape_delimiter(s: str) -> str:
+    """Unescape common escape sequences in a delimiter string.
+
+    Handles \\t (tab), \\n (newline), \\\\ (backslash).
+    Single characters and already-unescaped values pass through unchanged.
+    """
+    replacements = {"\\t": "\t", "\\n": "\n", "\\\\": "\\"}
+    for escaped, unescaped in replacements.items():
+        s = s.replace(escaped, unescaped)
+    return s
+
+
+def available_fields(records: list) -> list[str]:
+    """Collect all unique top-level keys from a list of dicts.
+
+    Returns sorted list of field names. Returns empty list if records
+    are empty or not dicts.
+    """
+    keys: set[str] = set()
+    for rec in records:
+        if isinstance(rec, dict):
+            keys.update(rec.keys())
+    return sorted(keys)

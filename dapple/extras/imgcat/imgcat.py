@@ -256,12 +256,12 @@ def main() -> None:
                     no_color=args.no_color,
                     dest=dest,
                 )
+            except ImportError as e:
+                errors.append(f"{image_path.name}: Missing dependency: {e}")
+                continue
             except Exception as e:
                 errors.append(f"{image_path}: {e}")
                 continue
-    except ImportError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        exit_code = 1
     except KeyboardInterrupt:
         exit_code = 130
     finally:

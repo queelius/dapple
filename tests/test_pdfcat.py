@@ -339,3 +339,25 @@ class TestPdfcatCLI:
             capture_output=True, text=True,
         )
         assert result.returncode != 0
+
+
+class TestErrorMessages:
+    def test_corrupt_pdf_reports_error(self, tmp_path):
+        """Corrupt PDF should produce error message, not silent failure."""
+        bad_pdf = tmp_path / "corrupt.pdf"
+        bad_pdf.write_text("this is not a PDF")
+        from io import StringIO
+        from dapple.extras.pdfcat.pdfcat import render_pdf_to_images
+        import sys
+
+        # Capture stderr
+        old_stderr = sys.stderr
+        sys.stderr = captured = StringIO()
+        try:
+            result = render_pdf_to_images(bad_pdf)
+        finally:
+            sys.stderr = old_stderr
+
+        # Should report the error on stderr (not silently return empty)
+        stderr_output = captured.getvalue()
+        assert "Failed to open PDF" in stderr_output

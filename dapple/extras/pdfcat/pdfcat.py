@@ -118,7 +118,8 @@ def render_pdf_to_images(
 
     try:
         pdf = pdfium.PdfDocument(path)
-    except Exception:
+    except Exception as e:
+        print(f"Error: {path.name}: Failed to open PDF: {e}", file=sys.stderr)
         return RenderResult()
 
     total_pages = len(pdf)
@@ -146,7 +147,11 @@ def render_pdf_to_images(
             pil_image.save(img_path, "PNG")
 
             rendered.append(RenderedPage(number=page_num, image_path=img_path))
-        except Exception:
+        except Exception as e:
+            print(
+                f"Warning: {path.name}: Failed to render page {page_num}: {e}",
+                file=sys.stderr,
+            )
             continue
 
     pdf.close()

@@ -256,6 +256,39 @@ class TestImgcatFunction:
             assert len(output.getvalue()) > 0
 
 
+class TestErrorHandling:
+    """Tests for imgcat error handling."""
+
+    def test_nonexistent_file_reports_not_found(self):
+        import subprocess
+
+        result = subprocess.run(
+            ["python", "-m", "dapple.extras.imgcat.imgcat", "/nonexistent/file.png"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+        assert "not found" in result.stderr.lower()
+
+    def test_import_error_reports_missing_dependency(self, capsys):
+        """ImportError caught per-image with clear 'Missing dependency' message."""
+        from dapple.extras.imgcat.imgcat import main
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a real file so file-not-found doesn't trigger first
+            img_path = Path(tmpdir) / "test.png"
+            img_path.write_bytes(b"fake")
+
+            with patch.object(sys, "argv", ["imgcat", "-r", "braille", str(img_path)]):
+                with patch("dapple.extras.imgcat.imgcat.imgcat", side_effect=ImportError("No module named 'PIL'")):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 1
+
+            captured = capsys.readouterr()
+            assert "Missing dependency" in captured.err
+
+
 class TestImgcatCLI:
     """Tests for imgcat CLI."""
 

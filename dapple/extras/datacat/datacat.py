@@ -378,7 +378,10 @@ def extract_field_values(
             continue
 
     if not values:
-        raise ValueError(f"No numeric values found at path '{path}'")
+        from dapple.extras.common import available_fields
+        fields = available_fields(records)
+        hint = f" Available fields: {', '.join(fields)}" if fields else ""
+        raise ValueError(f"No numeric values found at path '{path}'.{hint}")
 
     return values
 
@@ -413,7 +416,10 @@ def extract_field_categories(
             continue
 
     if not raw_values:
-        raise ValueError(f"No values found at path '{path}'")
+        from dapple.extras.common import available_fields
+        fields = available_fields(records)
+        hint = f" Available fields: {', '.join(fields)}" if fields else ""
+        raise ValueError(f"No values found at path '{path}'.{hint}")
 
     counts = Counter(raw_values)
     sorted_items = counts.most_common()

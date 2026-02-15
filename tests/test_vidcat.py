@@ -348,3 +348,15 @@ class TestCLI:
 
         captured = capsys.readouterr()
         assert "File not found" in captured.err
+
+
+class TestParseErrors:
+    def test_bad_frame_range(self):
+        """Invalid frame range should produce clear error."""
+        with pytest.raises(ValueError, match="Invalid frame number"):
+            parse_frames("abc-def", 100)
+
+    def test_bad_single_frame(self):
+        """Non-numeric single frame should produce clear error."""
+        with pytest.raises(ValueError, match="Invalid frame number"):
+            parse_frames("xyz", 100)

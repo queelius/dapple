@@ -1136,3 +1136,24 @@ class TestParametric:
         main()
         captured = capsys.readouterr()
         assert "x:" in captured.out
+
+
+class TestErrorHandling:
+    def test_bad_expression_reports_which(self):
+        """Bad expression should identify which expression failed."""
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.funcat.funcat", "INVALID(x)"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert "INVALID" in result.stderr
+
+    def test_exit_code_on_error(self):
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.funcat.funcat", "+++"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert result.stderr.strip()  # should have error message

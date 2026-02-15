@@ -442,3 +442,27 @@ class TestCLI:
         jsonl = '{"v":1}\n{"v":2}\n{"v":3}'
         result = self._run(["--spark", ".v", "--color", "#ff0000"], stdin=jsonl)
         assert result.returncode == 0
+
+
+class TestFieldNotFoundMessage:
+    def _run(self, args: list[str], stdin: str = "") -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-m", "dapple.extras.datacat.cli"] + args,
+            input=stdin,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_plot_suggests_available_fields(self):
+        """--plot with wrong field should list available fields."""
+        jsonl = '{"latency": 100, "status": "ok"}\n{"latency": 200, "status": "err"}\n'
+        result = self._run(["--plot", "nonexistent"], stdin=jsonl)
+        assert result.returncode == 1
+        assert "nonexistent" in result.stderr
+        assert "latency" in result.stderr  # should suggest available fields
+
+    def test_spark_suggests_available_fields(self):
+        jsonl = '{"latency": 100, "region": "us"}\n{"latency": 200, "region": "eu"}\n'
+        result = self._run(["--spark", "bogus"], stdin=jsonl)
+        assert result.returncode == 1
+        assert "latency" in result.stderr

@@ -155,26 +155,29 @@ def parse_frames(frames_str: str, total_frames: int) -> list[int]:
     for part in frames_str.split(","):
         part = part.strip()
 
-        if "-" in part:
-            if part.startswith("-"):
-                # -5 means first 5 frames
-                end = int(part[1:])
-                result.extend(range(0, min(end, total_frames)))
-            elif part.endswith("-"):
-                # 100- means frame 100 onwards
-                start_idx = int(part[:-1]) - 1  # Convert to 0-indexed
-                result.extend(range(max(0, start_idx), total_frames))
+        try:
+            if "-" in part:
+                if part.startswith("-"):
+                    # -5 means first 5 frames
+                    end = int(part[1:])
+                    result.extend(range(0, min(end, total_frames)))
+                elif part.endswith("-"):
+                    # 100- means frame 100 onwards
+                    start_idx = int(part[:-1]) - 1  # Convert to 0-indexed
+                    result.extend(range(max(0, start_idx), total_frames))
+                else:
+                    # 1-10 means frames 1 through 10
+                    start_str, end_str = part.split("-")
+                    start_idx = int(start_str) - 1  # Convert to 0-indexed
+                    end_idx = int(end_str)
+                    result.extend(range(max(0, start_idx), min(end_idx, total_frames)))
             else:
-                # 1-10 means frames 1 through 10
-                start_str, end_str = part.split("-")
-                start_idx = int(start_str) - 1  # Convert to 0-indexed
-                end_idx = int(end_str)
-                result.extend(range(max(0, start_idx), min(end_idx, total_frames)))
-        else:
-            # Single frame number
-            frame = int(part) - 1  # Convert to 0-indexed
-            if 0 <= frame < total_frames:
-                result.append(frame)
+                # Single frame number
+                frame = int(part) - 1  # Convert to 0-indexed
+                if 0 <= frame < total_frames:
+                    result.append(frame)
+        except ValueError:
+            raise ValueError(f"Invalid frame number: '{part}' in range '{frames_str}'")
 
     return sorted(set(result))
 
@@ -230,7 +233,8 @@ def extract_frames(
             check=True,
         )
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"ffmpeg failed: {e.stderr.decode()}")
+        stderr_msg = (e.stderr or b"").decode(errors="replace")[:200]
+        raise RuntimeError(f"ffmpeg failed: {stderr_msg}")
 
     # Yield extracted frames in order
     for frame_path in sorted(output_dir.glob("frame_*.png")):
