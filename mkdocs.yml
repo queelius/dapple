@@ -67,6 +67,7 @@ nav:
   - Reference: reference/index.md
   - Blog:
     - blog/index.md
+    - Composition and Layout: blog/composition-and-layout.md
     - Terminal Graphics in the AI Age: blog/terminal-graphics-ai-age.md
     - One Canvas, Seven Renderers: blog/one-canvas-seven-renderers.md
     - Viewers and Creators: blog/viewers-and-creators.md
