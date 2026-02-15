@@ -105,11 +105,15 @@ Best renderer for plots: **braille** (line/bar charts are line art).
 
 ```bash
 csvcat data.csv                         # formatted table (no renderer)
-csvcat data.csv --plot line             # line plot (braille)
-csvcat data.csv --plot bar -x name -y sales  # bar chart
-csvcat --delimiter '\\t' data.tsv       # TSV file
+csvcat data.csv --plot score            # line plot of 'score' column
+csvcat data.csv --bar department        # bar chart of category counts
+csvcat data.csv --spark revenue         # sparkline of a numeric column
+csvcat data.csv --histogram age         # histogram of numeric column
+csvcat data.csv --heatmap "q1,q2,q3"   # heatmap of multiple columns
+csvcat data.csv --cols name,score       # select columns
+csvcat data.csv --sort score --desc     # sort by column
+csvcat -d $'\\t' data.tsv               # TSV file (use $'\\t' for tab)
 cat data.csv | csvcat                   # pipe from stdin
-csvcat file1.csv file2.csv              # multiple files
 ```
 """,
     "datacat": """\
@@ -119,12 +123,14 @@ lines, or terminal plots.
 Best renderer for plots: **braille** (data charts are line art).
 
 ```bash
-datacat records.json                    # formatted table
-datacat records.jsonl --plot line       # line plot (braille)
-datacat data.json -q .results          # query nested path
-datacat --spark data.jsonl              # spark line summary
+datacat records.json                    # tree view (default)
+datacat records.jsonl --table           # flatten JSONL to table
+datacat records.jsonl --plot latency    # line plot of a numeric field
+datacat records.jsonl --spark latency   # sparkline of a numeric field
+datacat records.jsonl --bar region      # bar chart of category counts
+datacat data.json -q .results          # query nested dot-path
+datacat data.json --json               # syntax-colored JSON
 cat data.jsonl | datacat                # pipe from stdin
-datacat file1.json file2.json           # multiple files
 ```
 """,
     "funcat": """\
