@@ -44,6 +44,9 @@ nav:
     - Preprocessing: guide/preprocessing.md
     - Adapters: guide/adapters.md
     - Auto-Detection: guide/auto-detection.md
+  - Guide:
+    - Layout Engine: guide/layout.md
+    - Charts API: guide/charts.md
   - CLI Tools:
     - Overview: tools/index.md
     - imgcat: tools/imgcat.md
@@ -54,6 +57,13 @@ nav:
     - csvcat: tools/csvcat.md
     - datacat: tools/datacat.md
     - vizlib: tools/vizlib.md
+    - compcat: tools/compcat.md
+    - thumbcat: tools/thumbcat.md
+    - ansicat: tools/ansicat.md
+    - diffcat: tools/diffcat.md
+    - storycat: tools/storycat.md
+    - plotcat: tools/plotcat.md
+    - dashcat: tools/dashcat.md
   - Reference: reference/index.md
   - Blog:
     - blog/index.md

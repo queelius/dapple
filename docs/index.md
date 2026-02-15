@@ -1,21 +1,10 @@
 # dapple
 
-**Unified terminal graphics — one Canvas API, seven renderers.**
+**Unified terminal graphics — one Canvas API, seven renderers, 14 CLI tools.**
 
 Terminal-centric development is now mainstream. Claude Code runs in your terminal. AI assistants stream their work as text. Developers SSH into remote machines, pair with tmux, and live in the command line. In this world, there's a gap: we want to see graphics without leaving the terminal.
 
-dapple fills that gap. Load a bitmap once, output to any format — braille, quadrants, sextants, ASCII, sixel, kitty, or fingerprint. Choose the renderer that matches your terminal's capabilities and your visual needs.
-
-## Why a Unified Library?
-
-Terminal graphics tools are fragmented. One library does braille. Another does quadrant blocks. A third handles sixel. Each has its own API, its own conventions.
-
-dapple unifies these approaches:
-
-- **Single Canvas class** — Load your bitmap once, output anywhere
-- **Pluggable renderers** — Switch formats with one line: `canvas.out(braille)` or `canvas.out(quadrants)`
-- **Consistent options** — Same preprocessing, same color modes, predictable behavior
-- **Stream-based output** — Write to stdout, files, or any text stream
+dapple fills that gap. Load a bitmap once, output to any format — braille, quadrants, sextants, ASCII, sixel, kitty, or fingerprint. Compose layouts with Frame and Grid. Create charts with the character-dimension charts API.
 
 ## Quick Example
 
@@ -44,21 +33,27 @@ canvas.out(quadrants)    # Block chars with ANSI color
 
 ## CLI Tools
 
-dapple ships command-line tools for viewing images, video, PDFs, markdown, and more:
-
 ```bash
-imgcat photo.jpg                    # view image in terminal
-pdfcat document.pdf                 # view PDF pages
-vidcat video.mp4                    # play video in terminal
-mdcat README.md                     # render markdown with images
-funcat "sin(x)"                     # plot a function
-csvcat data.csv --bar revenue       # chart CSV columns
-datacat data.jsonl --spark value    # sparkline from JSONL
+imgcat photo.jpg                    # view image
+pdfcat document.pdf                 # view PDF
+vidcat video.mp4                    # video frames
+mdcat README.md                     # render markdown
+funcat "sin(x)"                     # plot function
+funcat -p "cos(t),sin(t)"          # parametric curve
+csvcat data.csv --plot line         # chart CSV
+datacat data.jsonl --spark          # sparkline JSONL
+compcat img.jpg braille sextants    # compare renderers
+thumbcat photos/*.jpg --cols 4      # contact sheet
+diffcat before.png after.png        # visual diff
+storycat video.mp4 --cols 5         # storyboard grid
+plotcat data.csv --facet region      # faceted plots
+dashcat layout.yaml                 # YAML dashboard
 ```
 
 ## What's Next
 
 - [Getting Started](getting-started.md) — Installation and first steps
 - [Canvas Guide](guide/canvas.md) — The core Canvas API
-- [Renderers Guide](guide/renderers.md) — Choosing and configuring renderers
-- [CLI Tools](tools/index.md) — Terminal viewers and creators
+- [Layout Engine](guide/layout.md) — Frame, Grid, and Canvas.fit()
+- [Charts API](guide/charts.md) — Character-dimension charts
+- [CLI Tools](tools/index.md) — All 14 terminal tools

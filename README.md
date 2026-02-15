@@ -12,7 +12,9 @@ dapple unifies these approaches:
 
 - **Single Canvas class** - Load your bitmap once, output anywhere
 - **Pluggable renderers** - Switch formats with one line: `canvas.out(braille)` or `canvas.out(quadrants)`
-- **Consistent options** - Same preprocessing, same color modes, predictable behavior
+- **Layout primitives** - Frame and Grid for composing multi-panel displays
+- **Charts API** - Sparklines, line plots, bar charts, histograms, heatmaps
+- **14 CLI tools** - View images, PDFs, markdown, video, data, math plots, and more
 - **Stream-based output** - Write to stdout, files, or any text stream
 
 ## Installation
@@ -25,9 +27,20 @@ pip install dapple
 pip install dapple[imgcat]          # terminal image viewer
 pip install dapple[pdfcat]          # PDF viewer (adds pypdfium2)
 pip install dapple[mdcat]           # markdown viewer (adds rich)
+pip install dapple[funcat]          # math/parametric plotter
+pip install dapple[vidcat]          # video frame viewer
+pip install dapple[csvcat]          # CSV/TSV viewer & plotter
+pip install dapple[datacat]         # JSON/JSONL viewer & plotter
+pip install dapple[compcat]         # renderer comparison
+pip install dapple[thumbcat]        # image contact sheet
+pip install dapple[ansicat]         # ANSI art viewer
+pip install dapple[diffcat]         # visual image diff
+pip install dapple[storycat]        # video storyboard grid
+pip install dapple[plotcat]         # faceted data plots
+pip install dapple[dashcat]         # YAML-driven dashboard (adds pyyaml)
 
 # Bundles
-pip install dapple[all-tools]       # all CLI tools
+pip install dapple[all-tools]       # all 14 CLI tools
 pip install dapple[adapters]        # PIL + matplotlib adapters
 pip install dapple[dev]             # development (tests + all deps)
 ```
@@ -128,6 +141,75 @@ canvas.out(fingerprint(glyph_set="braille"))   # Braille glyphs
 canvas.out(fingerprint(cell_width=10, cell_height=20))
 ```
 
+## Layout Engine
+
+dapple provides layout primitives for composing multi-panel terminal displays.
+
+### Canvas.fit()
+
+Resize a canvas to fit character dimensions, handling aspect-ratio correction automatically:
+
+```python
+from dapple import Canvas, braille, sextants
+from dapple.layout import terminal_fit
+
+canvas = from_pil(Image.open("photo.jpg"))
+
+# Fit to terminal width with aspect correction
+fitted = canvas.fit(braille, width=80)
+fitted.out(braille)
+
+# Or use terminal_fit() for renderer-aware sizing
+# (handles kitty/sixel/character renderers differently)
+canvas, renderer = terminal_fit(canvas, sextants, width=80)
+canvas.out(renderer)
+```
+
+### Frame and Grid
+
+Compose multiple canvases into structured layouts:
+
+```python
+from dapple import Canvas, Frame, Grid, sextants
+import numpy as np
+
+# Frame adds title, border, padding
+c1 = Canvas(np.random.rand(40, 80).astype(np.float32))
+frame = Frame(c1, title="Random Noise", border=True)
+frame.render(sextants)
+
+# Grid arranges frames in rows and columns
+c2 = Canvas(np.random.rand(40, 80).astype(np.float32))
+grid = Grid([[c1, c2]], width=100, gap=1)
+grid.render(sextants)
+```
+
+## Charts API
+
+Character-dimension wrappers around the built-in vizlib chart primitives. Specify width and height in characters instead of pixels:
+
+```python
+from dapple.charts import sparkline, line_plot, bar_chart, histogram, heatmap
+from dapple import braille
+
+# Sparkline
+chart = sparkline([1, 4, 2, 8, 3, 7], width=40, height=4)
+chart.out(braille)
+
+# Line plot
+chart = line_plot(y=[1, 4, 2, 8, 3, 7], width=60, height=20)
+chart.out(braille)
+
+# Bar chart
+chart = bar_chart(["A", "B", "C"], [10, 25, 15], width=60, height=20)
+chart.out(braille)
+
+# Histogram
+import numpy as np
+chart = histogram(np.random.randn(1000), width=60, height=20, bins=30)
+chart.out(braille)
+```
+
 ## Preprocessing
 
 dapple includes preprocessing functions for improved output:
@@ -140,7 +222,7 @@ from dapple import (
     gamma_correct,   # Gamma correction
     sharpen,         # Edge enhancement
     threshold,       # Binary threshold
-    resize,          # Resize with bilinear interpolation
+    resize,          # Resize with bilinear interpolation (2D and 3D)
     crop,            # Extract rectangular region
     flip,            # Mirror horizontally or vertically
     rotate,          # Rotate by degrees
@@ -247,31 +329,76 @@ inverted = canvas.with_invert()
 
 ## CLI Tools
 
-dapple ships several command-line tools, each installed as a standalone entry point:
+dapple ships 14 command-line tools, each installed as a standalone entry point.
+
+### Viewers
 
 ```bash
 imgcat photo.jpg                    # view image in terminal
-imgcat photo.jpg -r braille         # braille output
+imgcat photo.jpg -r sextants -w 80  # sextants for photos
 imgcat photo.jpg --dither           # Floyd-Steinberg dithering
-imgcat photo.jpg -w 120             # custom width
 
 pdfcat document.pdf                 # view PDF pages
 pdfcat document.pdf --pages 1-3     # specific pages
 pdfcat document.pdf --dpi 300       # higher resolution
 
 mdcat README.md                     # render markdown with formatting
-mdcat README.md --no-images         # skip inline images
-
-funcat "sin(x)" -r braille         # plot function
-funcat "x**2" --xmin -5 --xmax 5   # custom range
+mdcat README.md --images            # with inline images
 
 vidcat video.mp4                    # play video in terminal
+vidcat video.mp4 --every 1s         # 1 frame per second
 
-csvcat data.csv --bar revenue       # chart CSV columns
-datacat data.jsonl --spark value    # sparkline from JSONL
+ansicat artwork.ans -r sextants     # view ANSI art
 ```
 
-Each tool supports `-r` / `--renderer` to select the output format (braille, quadrants, sextants, ascii, sixel, kitty, fingerprint) and common preprocessing flags (`--dither`, `--contrast`, `--invert`).
+### Data & Math
+
+```bash
+csvcat data.csv                     # formatted table
+csvcat data.csv --plot line -y revenue,cost  # multi-series line plot
+
+datacat records.jsonl --plot line   # line plot from JSONL
+datacat data.json -q .results      # query nested path
+datacat records.jsonl --spark       # sparkline summary
+
+funcat "sin(x)"                    # plot math expression
+funcat "sin(x)" "cos(x)" --legend  # overlay with legend
+funcat "x**2" --xmin -5 --xmax 5   # custom domain
+funcat -p "cos(t),sin(t)"          # parametric curve (circle)
+funcat -p "t*cos(t),t*sin(t)"      # parametric spiral
+```
+
+### Composition
+
+```bash
+compcat photo.jpg braille sextants quadrants  # compare renderers side-by-side
+thumbcat photos/*.jpg --cols 4 -w 120         # image contact sheet
+diffcat before.png after.png                  # visual image diff
+diffcat a.png b.png --mode overlay            # difference heatmap
+storycat video.mp4 --cols 5 --every 10s       # video storyboard grid
+```
+
+### Analysis
+
+```bash
+plotcat data.csv --facet region --plot line -x date -y sales  # faceted plots
+dashcat layout.yaml                                           # YAML-driven dashboard
+dashcat --preset system                                       # built-in system metrics
+```
+
+### Chaining (funcat)
+
+funcat supports `--json` for composing multi-curve figures:
+
+```bash
+funcat -p "cos(t),sin(t)" --color yellow --json \
+  | funcat -p "0.1*cos(t)-0.3,0.1*sin(t)+0.3" --color blue --json \
+  | funcat -p "0.1*cos(t)+0.3,0.1*sin(t)+0.3" --color blue --json \
+  | funcat -p "0.4*cos(t),-0.3+0.2*sin(t)" --color red --tmin 3.14 --tmax 6.28 \
+      --xmin -1.5 --xmax 1.5 --ymin -1.5 --ymax 1.5
+```
+
+All tools support `-r` / `--renderer` to select the output format and common preprocessing flags (`--dither`, `--contrast`, `--invert`).
 
 ## Auto-Detection
 
@@ -305,6 +432,17 @@ render_image("photo.jpg", width=640)
 | High-quality local display | `sixel` (xterm), `kitty` (kitty/wezterm) |
 | Universal compatibility | `ascii` |
 | Artistic/experimental | `fingerprint` |
+
+## Claude Code Integration
+
+dapple includes a skill generator for [Claude Code](https://claude.ai/code):
+
+```bash
+dapple-skill --global    # install skill for all projects
+dapple-skill --local     # install for current project only
+```
+
+This teaches Claude Code how to use all installed dapple tools.
 
 ## License
 
