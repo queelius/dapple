@@ -280,19 +280,43 @@ def extract_numeric(data: CsvData, column: str) -> list[float]:
     return values
 
 
+def _is_numeric_column(data: CsvData, idx: int) -> bool:
+    """Check if a column is predominantly numeric."""
+    numeric_count = 0
+    for row in data.rows:
+        if idx < len(row):
+            try:
+                float(row[idx])
+                numeric_count += 1
+            except (ValueError, TypeError):
+                pass
+    return numeric_count > len(data.rows) // 2
+
+
+def _find_label_column(data: CsvData, exclude_idx: int) -> int | None:
+    """Find the first non-numeric column to use as labels."""
+    for i, header in enumerate(data.headers):
+        if i == exclude_idx:
+            continue
+        if not _is_numeric_column(data, i):
+            return i
+    return None
+
+
 def extract_categories(
     data: CsvData, column: str
 ) -> tuple[list[str], list[float]]:
-    """Extract category labels and counts from a column.
+    """Extract bar chart data from a column.
 
-    Counts occurrences of each unique value in the column.
+    If the column is numeric, uses the values directly as bar lengths
+    and finds a text column for labels. If categorical, counts occurrences.
 
     Args:
         data: Input data.
         column: Column name.
 
     Returns:
-        (labels, counts) tuple.
+        (labels, values) tuple.
 
     Raises:
         ValueError: If column not found.
@@ -303,8 +327,28 @@ def extract_categories(
         available = ", ".join(data.headers)
         raise ValueError(f"Column '{column}' not found. Available: {available}")
 
-    values = [row[idx] for row in data.rows if idx < len(row)]
-    counts = Counter(values)
+    # If the column is numeric, plot values directly with labels from
+    # the first text column (or row indices).
+    if _is_numeric_column(data, idx):
+        label_idx = _find_label_column(data, idx)
+        labels = []
+        values = []
+        for i, row in enumerate(data.rows):
+            if idx < len(row):
+                try:
+                    val = float(row[idx])
+                except (ValueError, TypeError):
+                    continue
+                if label_idx is not None and label_idx < len(row):
+                    labels.append(row[label_idx])
+                else:
+                    labels.append(str(i + 1))
+                values.append(val)
+        return labels, values
+
+    # Categorical: count occurrences
+    values_str = [row[idx] for row in data.rows if idx < len(row)]
+    counts = Counter(values_str)
 
     # Sort by count descending
     sorted_items = counts.most_common()

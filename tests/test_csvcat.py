@@ -317,6 +317,41 @@ class TestExtractCategories:
         with pytest.raises(ValueError, match="not found"):
             extract_categories(data, "b")
 
+    def test_numeric_column_uses_values_directly(self):
+        """Numeric column should use values as bar lengths, not count occurrences."""
+        data = CsvData(
+            headers=["product", "q1"],
+            rows=[
+                ["Widget A", "12000"],
+                ["Widget B", "8000"],
+                ["Gadget X", "25000"],
+            ],
+        )
+        labels, values = extract_categories(data, "q1")
+        assert labels == ["Widget A", "Widget B", "Gadget X"]
+        assert values == [12000.0, 8000.0, 25000.0]
+
+    def test_numeric_column_uses_first_text_column_as_labels(self):
+        """When bar-charting a numeric column, labels come from first text column."""
+        data = CsvData(
+            headers=["id", "name", "score"],
+            rows=[["1", "Alice", "95"], ["2", "Bob", "87"]],
+        )
+        labels, values = extract_categories(data, "score")
+        assert labels == ["Alice", "Bob"]
+        assert values == [95.0, 87.0]
+
+    def test_numeric_column_no_label_column_uses_indices(self):
+        """If no text column exists, use row indices as labels."""
+        data = CsvData(
+            headers=["a", "b"],
+            rows=[["10", "20"], ["30", "40"]],
+        )
+        labels, values = extract_categories(data, "b")
+        # 'a' is also numeric, so row indices are used
+        assert labels == ["1", "2"]
+        assert values == [20.0, 40.0]
+
 
 # ── CLI integration ──────────────────────────────────────────────────
 

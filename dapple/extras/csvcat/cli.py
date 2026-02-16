@@ -19,6 +19,7 @@ from dapple.extras.csvcat.csvcat import (
     sort_by,
     tail,
 )
+from dapple.textchart import text_bar_chart, text_sparkline
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -178,21 +179,30 @@ def _run_table_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> No
 
 
 def _run_plot_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> None:
-    """Render a chart from CSV data using vizlib."""
+    """Render a chart from CSV data."""
+    if args.bar:
+        labels, values = extract_categories(data, args.bar)
+        dest.write(text_bar_chart(labels, values, width=args.width, title=args.bar) + "\n")
+        return
+
+    if args.spark:
+        labels, values = extract_categories(data, args.spark)
+        dest.write(text_sparkline(labels, values, title=args.spark) + "\n")
+        return
+
+    # Bitmap chart modes below require vizlib / numpy
     from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
-    from dapple.extras.vizlib.charts import bar_chart, heatmap, histogram, line_plot, sparkline
+    from dapple.extras.vizlib.charts import heatmap, histogram, line_plot
     from dapple.extras.vizlib.colors import COLOR_PALETTE
 
     renderer = get_renderer(args.renderer)
     term_cols, term_lines = get_terminal_size()
-    char_w = args.width or term_cols
-    char_h = args.height or max(10, term_lines // 3)
+    char_w = args.width or min(term_cols // 2, 60)
+    char_h = args.height or min(10, max(6, term_lines // 5))
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
+    line_thick = max(1, min(3, px_h // 10))
 
-    if args.spark:
-        values = extract_numeric(data, args.spark)
-        canvas = sparkline(values, width=px_w, height=px_h)
-    elif args.plot:
+    if args.plot:
         # Support comma-separated column names for multi-series
         col_names = [c.strip() for c in args.plot.split(",")]
         primary_values = extract_numeric(data, col_names[0])
@@ -202,12 +212,9 @@ def _run_plot_mode(data: CsvData, args: argparse.Namespace, dest: TextIO) -> Non
                 s_values = extract_numeric(data, col)
                 s_color = COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]
                 extra_series.append((s_values, s_color))
-            canvas = line_plot(primary_values, width=px_w, height=px_h, series=extra_series)
+            canvas = line_plot(primary_values, width=px_w, height=px_h, series=extra_series, thickness=line_thick)
         else:
-            canvas = line_plot(primary_values, width=px_w, height=px_h)
-    elif args.bar:
-        labels, counts = extract_categories(data, args.bar)
-        canvas = bar_chart(labels, counts, width=px_w, height=px_h)
+            canvas = line_plot(primary_values, width=px_w, height=px_h, thickness=line_thick)
     elif args.histogram:
         values = extract_numeric(data, args.histogram)
         canvas = histogram(values, width=px_w, height=px_h)

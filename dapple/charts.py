@@ -1,8 +1,7 @@
 """Character-dimension chart API.
 
 Thin wrappers around dapple.extras.vizlib.charts that accept character
-dimensions instead of pixel dimensions. Sized for braille (2x4) by
-default — looks reasonable with any renderer.
+dimensions instead of pixel dimensions. All functions return a Canvas.
 """
 
 from __future__ import annotations
@@ -17,6 +16,9 @@ from dapple.layout import terminal_columns
 # Reference cell dimensions (braille: 2 wide, 4 tall)
 _REF_CELL_W = 2
 _REF_CELL_H = 4
+
+
+# ── Bitmap charts (return Canvas) ───────────────────────────────────
 
 
 def sparkline(
