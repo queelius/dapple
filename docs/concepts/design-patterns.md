@@ -260,7 +260,7 @@ The same pattern works for data visualization tools:
 csvcat data.csv --bar revenue
 
 # JSON data to sparkline
-datacat metrics.jsonl --spark latency
+datcat metrics.jsonl --spark latency
 ```
 
 ### Why it works
@@ -308,7 +308,7 @@ Consistent flags across all tools reinforce the pattern:
 |------|---------|---------|
 | `-r` | Renderer selection | imgcat, pdfcat, vidcat, mdcat, funcat |
 | `-w` | Width in columns | imgcat, pdfcat, vidcat, funcat |
-| `-j` | JSON output mode | funcat, csvcat, datacat |
+| `-j` | JSON output mode | funcat, csvcat, datcat |
 | `-o` | Output file | vidcat |
 | `--dither` | Floyd-Steinberg dithering | imgcat, pdfcat, vidcat |
 | `--contrast` | Auto-contrast | imgcat, pdfcat, vidcat |

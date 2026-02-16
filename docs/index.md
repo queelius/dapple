@@ -1,6 +1,6 @@
 # dapple
 
-**Unified terminal graphics — one Canvas API, seven renderers, 14 CLI tools.**
+**Unified terminal graphics — one Canvas API, seven renderers, 12 CLI tools.**
 
 Terminal-centric development is now mainstream. Claude Code runs in your terminal. AI assistants stream their work as text. Developers SSH into remote machines, pair with tmux, and live in the command line. In this world, there's a gap: we want to see graphics without leaving the terminal.
 
@@ -41,11 +41,9 @@ mdcat README.md                     # render markdown
 funcat "sin(x)"                     # plot function
 funcat -p "cos(t),sin(t)"          # parametric curve
 csvcat data.csv --plot line         # chart CSV
-datacat data.jsonl --spark          # sparkline JSONL
+datcat data.jsonl --spark          # sparkline JSONL
 compcat img.jpg braille sextants    # compare renderers
 thumbcat photos/*.jpg --cols 4      # contact sheet
-diffcat before.png after.png        # visual diff
-storycat video.mp4 --cols 5         # storyboard grid
 plotcat data.csv --facet region      # faceted plots
 dashcat layout.yaml                 # YAML dashboard
 ```
@@ -56,4 +54,4 @@ dashcat layout.yaml                 # YAML dashboard
 - [Canvas Guide](guide/canvas.md) — The core Canvas API
 - [Layout Engine](guide/layout.md) — Frame, Grid, and Canvas.fit()
 - [Charts API](guide/charts.md) — Character-dimension charts
-- [CLI Tools](tools/index.md) — All 14 terminal tools
+- [CLI Tools](tools/index.md) — All 12 terminal tools

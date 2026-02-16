@@ -27,7 +27,7 @@ python -c "from dapple import Canvas, braille; print('OK')"               # veri
 
 1. **Core** (`dapple/canvas.py`, `dapple/renderers/`, `dapple/color.py`, `dapple/preprocess.py`, `dapple/auto.py`) — numpy only, no optional deps
 2. **Adapters** (`dapple/adapters/`) — bridge external libraries (PIL, matplotlib, cairo, ANSI) to Canvas; optional deps
-3. **Extras** (`dapple/extras/`) — CLI tools built on dapple (imgcat, funcat, pdfcat, mdcat, vidcat, csvcat, datacat, vizlib); each has its own optional dependency group in pyproject.toml
+3. **Extras** (`dapple/extras/`) — CLI tools built on dapple (imgcat, funcat, pdfcat, mdcat, vidcat, csvcat, datcat, vizlib); each has its own optional dependency group in pyproject.toml
 
 ### Data conventions
 

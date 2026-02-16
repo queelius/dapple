@@ -43,8 +43,8 @@ class TestDetectExtras:
     def test_returns_all_keys(self):
         result = detect_extras()
         expected_keys = {
-            "imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datacat", "funcat",
-            "compcat", "thumbcat", "ansicat", "diffcat", "storycat", "plotcat", "dashcat",
+            "imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datcat", "funcat",
+            "compcat", "thumbcat", "ansicat", "plotcat", "dashcat",
         }
         assert set(result.keys()) == expected_keys
 
@@ -54,10 +54,10 @@ class TestDetectExtras:
             assert isinstance(val, bool)
 
     def test_zero_dep_extras_always_available(self):
-        """csvcat, datacat, funcat, ansicat, plotcat have no extra deps — always True."""
+        """csvcat, datcat, funcat, ansicat, plotcat have no extra deps — always True."""
         result = detect_extras()
         assert result["csvcat"] is True
-        assert result["datacat"] is True
+        assert result["datcat"] is True
         assert result["funcat"] is True
         assert result["ansicat"] is True
         assert result["plotcat"] is True
@@ -69,19 +69,19 @@ class TestDetectExtras:
 class TestGenerateSkill:
     def test_all_available(self):
         """With all extras available, all tool names appear."""
-        extras = {k: True for k in ("imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datacat", "funcat")}
+        extras = {k: True for k in ("imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datcat", "funcat")}
         content = generate_skill(extras)
         assert "imgcat" in content
         assert "pdfcat" in content
         assert "mdcat" in content
         assert "vidcat" in content
         assert "csvcat" in content
-        assert "datacat" in content
+        assert "datcat" in content
         assert "funcat" in content
 
     def test_none_available(self):
         """With nothing available, get the 'no extras' message."""
-        extras = {k: False for k in ("imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datacat", "funcat")}
+        extras = {k: False for k in ("imgcat", "pdfcat", "mdcat", "vidcat", "csvcat", "datcat", "funcat")}
         content = generate_skill(extras)
         assert "No extras detected" in content
         assert "imgcat" not in content.split("No extras detected")[1]
@@ -94,7 +94,7 @@ class TestGenerateSkill:
             "mdcat": False,
             "vidcat": False,
             "csvcat": True,
-            "datacat": False,
+            "datcat": False,
             "funcat": True,
         }
         content = generate_skill(extras)

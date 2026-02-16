@@ -1,4 +1,4 @@
-"""CLI entry point for datacat — terminal JSON/JSONL viewer."""
+"""CLI entry point for datcat — terminal JSON/JSONL viewer."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Iterator, TextIO
 
-from dapple.extras.datacat.datacat import (
+from dapple.extras.datcat.datcat import (
     dot_path_query,
     extract_field_categories,
     extract_field_values,
@@ -20,7 +20,7 @@ from dapple.extras.datacat.datacat import (
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="datacat",
+        prog="datcat",
         description="Terminal JSON/JSONL viewer with visualization modes.",
     )
 
@@ -151,7 +151,7 @@ def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, str | None, str
     elif not sys.stdin.isatty():
         yield ("<stdin>", sys.stdin.read(), None)
     else:
-        print("datacat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
+        print("datcat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
         sys.exit(1)
 
 
@@ -293,15 +293,17 @@ def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
 
     renderer = get_renderer(args.renderer)
     term_cols, term_lines = get_terminal_size()
-    char_w = args.width or term_cols
-    char_h = args.height or max(10, term_lines // 3)
+    char_w = args.width or min(term_cols // 2, 60)
+    char_h = args.height or min(10, max(6, term_lines // 5))
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
+    # Line thickness: 3px so lines are visible in braille/character renderers
+    line_thick = max(1, min(3, px_h // 10))
 
     from dapple.extras.vizlib.colors import COLOR_PALETTE
 
     if args.spark:
         values = extract_field_values(data, args.spark)
-        canvas = sparkline(values, width=px_w, height=px_h, color=color)
+        canvas = sparkline(values, width=px_w, height=px_h, color=color, thickness=line_thick)
     elif args.plot:
         # Support comma-separated field paths for multi-series
         field_paths = [p.strip() for p in args.plot.split(",")]
@@ -314,9 +316,10 @@ def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
                 extra_series.append((s_values, s_color))
             canvas = line_plot(
                 primary_values, width=px_w, height=px_h, color=color, series=extra_series,
+                thickness=line_thick,
             )
         else:
-            canvas = line_plot(primary_values, width=px_w, height=px_h, color=color)
+            canvas = line_plot(primary_values, width=px_w, height=px_h, color=color, thickness=line_thick)
     elif args.bar:
         labels, counts = extract_field_categories(data, args.bar)
         canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)

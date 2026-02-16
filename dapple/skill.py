@@ -27,13 +27,11 @@ _EXTRAS: dict[str, tuple[tuple[str, ...], str]] = {
     "mdcat": (("PIL", "rich"), "Markdown viewer"),
     "vidcat": (("PIL",), "Video frame viewer"),
     "csvcat": ((), "CSV/TSV viewer & plotter"),
-    "datacat": ((), "JSON/JSONL viewer & plotter"),
+    "datcat": ((), "JSON/JSONL viewer & plotter"),
     "funcat": ((), "Math expression plotter"),
     "compcat": (("PIL",), "Renderer comparison"),
     "thumbcat": (("PIL",), "Image contact sheet"),
     "ansicat": ((), "ANSI art viewer"),
-    "diffcat": (("PIL",), "Visual image diff"),
-    "storycat": (("PIL",), "Video storyboard grid"),
     "plotcat": ((), "Faceted data plots"),
     "dashcat": (("yaml",), "YAML-driven dashboard"),
 }
@@ -123,21 +121,21 @@ csvcat -d $'\\t' data.tsv               # TSV file (use $'\\t' for tab)
 cat data.csv | csvcat                   # pipe from stdin
 ```
 """,
-    "datacat": """\
-### datacat — JSON/JSONL Viewer & Plotter
+    "datcat": """\
+### datcat — JSON/JSONL Viewer & Plotter
 Display structured data (JSON, JSONL) as formatted tables, spark
 lines, or terminal plots.
 Best renderer for plots: **braille** (data charts are line art).
 
 ```bash
-datacat records.json                    # tree view (default)
-datacat records.jsonl --table           # flatten JSONL to table
-datacat records.jsonl --plot latency    # line plot of a numeric field
-datacat records.jsonl --spark latency   # sparkline of a numeric field
-datacat records.jsonl --bar region      # bar chart of category counts
-datacat data.json -q .results          # query nested dot-path
-datacat data.json --json               # syntax-colored JSON
-cat data.jsonl | datacat                # pipe from stdin
+datcat records.json                    # tree view (default)
+datcat records.jsonl --table           # flatten JSONL to table
+datcat records.jsonl --plot latency    # line plot of a numeric field
+datcat records.jsonl --spark latency   # sparkline of a numeric field
+datcat records.jsonl --bar region      # bar chart of category counts
+datcat data.json -q .results          # query nested dot-path
+datcat data.json --json               # syntax-colored JSON
+cat data.jsonl | datcat                # pipe from stdin
 ```
 """,
     "funcat": """\
@@ -197,29 +195,6 @@ dapple renderers. Best renderer: **sextants** (fills colored regions).
 ansicat artwork.ans -r sextants -w 80       # re-render ANSI art
 ansicat artwork.ans -r braille              # braille style
 cat artwork.ans | ansicat -                 # from stdin
-```
-""",
-    "diffcat": """\
-### diffcat — Visual Image Diff
-Compare two images visually in the terminal.
-Best renderer: **sextants** (photographic content).
-
-```bash
-diffcat before.png after.png                # side-by-side (default)
-diffcat before.png after.png --mode overlay # difference heatmap
-diffcat before.png after.png --mode highlight  # highlight changes
-diffcat -w 100 a.png b.png                  # wider output
-```
-""",
-    "storycat": """\
-### storycat — Video Storyboard Grid
-Extract video frames and display as a storyboard grid. Requires ffmpeg.
-Best renderer: **sextants** (video frames are photographic).
-
-```bash
-storycat video.mp4 --cols 5 --every 10s    # every 10 seconds
-storycat video.mp4 --frames 1-20 --cols 4  # specific frames
-storycat -r sextants -w 120 clip.mp4       # wide storyboard
 ```
 """,
     "plotcat": """\
@@ -313,9 +288,9 @@ description: >-
   Use when the user asks to display, preview, or view files visually in their
   terminal, OR to plot mathematical functions, parametric curves, equations, or
   data charts. Covers: images, PDFs, markdown, video, CSV, JSON, math/parametric
-  plots (funcat), ANSI art, image diffs, contact sheets, storyboards, dashboards,
+  plots (funcat), ANSI art, contact sheets, dashboards,
   renderer comparisons, or faceted data plots. Tools: imgcat, pdfcat, mdcat,
-  vidcat, csvcat, datacat, funcat, compcat, thumbcat, ansicat, diffcat, storycat,
+  vidcat, csvcat, datcat, funcat, compcat, thumbcat, ansicat,
   plotcat, dashcat. Output is terminal text meant for the user to read.
 ---
 

@@ -42,16 +42,14 @@ mdcat = ["pillow>=9.0", "rich>=13.0"]
 vidcat = ["pillow>=9.0"]
 vizlib = []
 csvcat = []
-datacat = []
+datcat = []
 compcat = ["pillow>=9.0"]
 thumbcat = ["pillow>=9.0"]
 ansicat = []
-diffcat = ["pillow>=9.0"]
-storycat = ["pillow>=9.0"]
 plotcat = []
 dashcat = ["pyyaml>=6.0"]
 # Bundles
-all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,csvcat,datacat,compcat,thumbcat,ansicat,diffcat,storycat,plotcat,dashcat]"]
+all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,csvcat,datcat,compcat,thumbcat,ansicat,plotcat,dashcat]"]
 # Development
 dev = [
     "pytest>=7.0",
@@ -77,12 +75,10 @@ pdfcat = "dapple.extras.pdfcat.pdfcat:main"
 mdcat = "dapple.extras.mdcat.mdcat:main"
 vidcat = "dapple.extras.vidcat.vidcat:main"
 csvcat = "dapple.extras.csvcat.cli:main"
-datacat = "dapple.extras.datacat.cli:main"
+datcat = "dapple.extras.datcat.cli:main"
 compcat = "dapple.extras.compcat.compcat:main"
 thumbcat = "dapple.extras.thumbcat.thumbcat:main"
 ansicat = "dapple.extras.ansicat.ansicat:main"
-diffcat = "dapple.extras.diffcat.diffcat:main"
-storycat = "dapple.extras.storycat.storycat:main"
 plotcat = "dapple.extras.plotcat.plotcat:main"
 dashcat = "dapple.extras.dashcat.dashcat:main"
 dapple-skill = "dapple.skill:main"

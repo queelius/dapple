@@ -55,13 +55,11 @@ nav:
     - mdcat: tools/mdcat.md
     - funcat: tools/funcat.md
     - csvcat: tools/csvcat.md
-    - datacat: tools/datacat.md
+    - datcat: tools/datcat.md
     - vizlib: tools/vizlib.md
     - compcat: tools/compcat.md
     - thumbcat: tools/thumbcat.md
     - ansicat: tools/ansicat.md
-    - diffcat: tools/diffcat.md
-    - storycat: tools/storycat.md
     - plotcat: tools/plotcat.md
     - dashcat: tools/dashcat.md
   - Reference: reference/index.md

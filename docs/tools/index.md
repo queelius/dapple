@@ -1,6 +1,6 @@
 # CLI Tools
 
-dapple ships 14 CLI tools as extras. Install individually or all at once:
+dapple ships 12 CLI tools as extras. Install individually or all at once:
 
 ```bash
 pip install dapple[all-tools]
@@ -34,15 +34,13 @@ All tools that produce graphical output share these flags:
 
 - **[funcat](funcat.md)** — Math expressions and parametric curves, with pipeline chaining
 - **[csvcat](csvcat.md)** — CSV/TSV tables and multi-series charts
-- **[datacat](datacat.md)** — JSON/JSONL tables, sparklines, and charts
-- **[vizlib](vizlib.md)** — Programmatic chart primitives (used by csvcat/datacat)
+- **[datcat](datcat.md)** — JSON/JSONL tables, sparklines, and charts
+- **[vizlib](vizlib.md)** — Programmatic chart primitives (used by csvcat/datcat)
 
 ## Composition
 
 - **[compcat](compcat.md)** — Compare renderers side by side
 - **[thumbcat](thumbcat.md)** — Image contact sheet / thumbnail grid
-- **[diffcat](diffcat.md)** — Visual image diff (side-by-side, overlay, highlight)
-- **[storycat](storycat.md)** — Video storyboard grid
 
 ## Analysis
 

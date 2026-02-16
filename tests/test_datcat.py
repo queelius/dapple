@@ -1,4 +1,4 @@
-"""Tests for datacat core and CLI."""
+"""Tests for datcat core and CLI."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from dapple.extras.datacat.datacat import (
+from dapple.extras.datcat.datcat import (
     detect_format,
     dot_path_query,
     extract_field_categories,
@@ -322,7 +322,7 @@ class TestExtractFieldCategories:
 class TestCLI:
     def _run(self, args: list[str], stdin: str = "") -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "dapple.extras.datacat.cli"] + args,
+            [sys.executable, "-m", "dapple.extras.datcat.cli"] + args,
             input=stdin,
             capture_output=True,
             text=True,
@@ -403,7 +403,7 @@ class TestCLI:
 
     def test_no_input_error(self):
         result = subprocess.run(
-            [sys.executable, "-m", "dapple.extras.datacat.cli", "/nonexistent/file.json"],
+            [sys.executable, "-m", "dapple.extras.datcat.cli", "/nonexistent/file.json"],
             capture_output=True,
             text=True,
         )
@@ -447,7 +447,7 @@ class TestCLI:
 class TestFieldNotFoundMessage:
     def _run(self, args: list[str], stdin: str = "") -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "dapple.extras.datacat.cli"] + args,
+            [sys.executable, "-m", "dapple.extras.datcat.cli"] + args,
             input=stdin,
             capture_output=True,
             text=True,

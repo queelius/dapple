@@ -1,4 +1,4 @@
-# datacat -- JSON/JSONL Viewer
+# datcat -- JSON/JSONL Viewer
 
 View JSON and JSONL data in the terminal with tree, table, and syntax-colored
 display modes. Includes dot-path querying and chart visualization for numeric
@@ -7,10 +7,10 @@ fields.
 ## Installation
 
 ```bash
-pip install dapple[datacat]
+pip install dapple[datcat]
 ```
 
-No additional dependencies are required. datacat uses dapple's vizlib for
+No additional dependencies are required. datcat uses dapple's vizlib for
 charting.
 
 ## Usage
@@ -19,29 +19,29 @@ charting.
 
 ```bash
 # View a JSON file (tree view by default)
-datacat config.json
+datcat config.json
 
 # View a JSONL file (one JSON object per line)
-datacat events.jsonl
+datcat events.jsonl
 
 # Read from stdin
-curl -s https://api.example.com/data | datacat
+curl -s https://api.example.com/data | datcat
 ```
 
 ### Display Modes
 
 ```bash
 # Tree view (default) -- box-drawing characters
-datacat config.json --tree
+datcat config.json --tree
 
 # Syntax-colored JSON
-datacat config.json --json
+datcat config.json --json
 
 # Disable colors
-datacat config.json --json --no-color
+datcat config.json --json --no-color
 
 # Table view (JSONL records flattened to columns)
-datacat events.jsonl --table
+datcat events.jsonl --table
 ```
 
 The table mode flattens JSONL records into aligned columns with type-based
@@ -49,7 +49,7 @@ coloring (numeric values in cyan, booleans in yellow, nulls dimmed).
 
 ```bash
 # Table with rotating column colors
-datacat events.jsonl --table --cycle-color
+datcat events.jsonl --table --cycle-color
 ```
 
 ### Dot-path Queries
@@ -58,34 +58,34 @@ Extract nested values using dot-path notation:
 
 ```bash
 # Query a specific field
-datacat config.json .database.host
+datcat config.json .database.host
 
 # Query nested arrays
-datacat data.json .users
+datcat data.json .users
 
 # Query within JSONL records
-datacat events.jsonl .metadata.timestamp
+datcat events.jsonl .metadata.timestamp
 ```
 
 ### Row Limiting (JSONL)
 
 ```bash
 # Show first N records
-datacat events.jsonl --head 10
+datcat events.jsonl --head 10
 
 # Show last N records
-datacat events.jsonl --tail 5
+datcat events.jsonl --tail 5
 ```
 
 ### Output to File
 
 ```bash
-datacat config.json --json -o output.txt
+datcat config.json --json -o output.txt
 ```
 
 ## Chart Visualization
 
-datacat can visualize numeric fields from JSONL data (arrays of records)
+datcat can visualize numeric fields from JSONL data (arrays of records)
 using four chart modes. These are mutually exclusive.
 
 ### Sparkline
@@ -93,8 +93,8 @@ using four chart modes. These are mutually exclusive.
 A compact line chart from a numeric field:
 
 ```bash
-datacat metrics.jsonl --spark value
-datacat events.jsonl --spark response_time
+datcat metrics.jsonl --spark value
+datcat events.jsonl --spark response_time
 ```
 
 ### Line Plot
@@ -102,8 +102,8 @@ datacat events.jsonl --spark response_time
 A line plot with optional baseline axis:
 
 ```bash
-datacat metrics.jsonl --plot value
-datacat sensors.jsonl --plot temperature -w 100 -H 20
+datcat metrics.jsonl --plot value
+datcat sensors.jsonl --plot temperature -w 100 -H 20
 ```
 
 ### Bar Chart
@@ -111,8 +111,8 @@ datacat sensors.jsonl --plot temperature -w 100 -H 20
 Category counts from a field:
 
 ```bash
-datacat events.jsonl --bar status
-datacat logs.jsonl --bar level
+datcat events.jsonl --bar status
+datcat logs.jsonl --bar level
 ```
 
 ### Histogram
@@ -120,26 +120,26 @@ datacat logs.jsonl --bar level
 Distribution of a numeric field:
 
 ```bash
-datacat metrics.jsonl --histogram latency
-datacat events.jsonl --histogram duration -w 80
+datcat metrics.jsonl --histogram latency
+datcat events.jsonl --histogram duration -w 80
 ```
 
 ### Chart Options
 
 ```bash
 # Renderer selection (default: braille)
-datacat metrics.jsonl --spark value -r quadrants
-datacat events.jsonl --bar status -r sextants
+datcat metrics.jsonl --spark value -r quadrants
+datcat events.jsonl --bar status -r sextants
 
 # Size control
-datacat metrics.jsonl --spark value -w 80 -H 15
+datcat metrics.jsonl --spark value -w 80 -H 15
 
 # Color
-datacat metrics.jsonl --spark value --color green
-datacat metrics.jsonl --plot value --color "#ff6600"
+datcat metrics.jsonl --spark value --color green
+datcat metrics.jsonl --plot value --color "#ff6600"
 
 # Output to file
-datacat metrics.jsonl --spark value -o chart.txt
+datcat metrics.jsonl --spark value -o chart.txt
 ```
 
 ## Examples
@@ -148,44 +148,44 @@ datacat metrics.jsonl --spark value -o chart.txt
 
 ```bash
 # View API response structure
-curl -s https://api.example.com/users | datacat
+curl -s https://api.example.com/users | datcat
 
 # Extract specific fields
-curl -s https://api.example.com/users | datacat .data
+curl -s https://api.example.com/users | datcat .data
 
 # View as table
-curl -s https://api.example.com/users | datacat .data --table
+curl -s https://api.example.com/users | datcat .data --table
 ```
 
 ### Log Analysis
 
 ```bash
 # Visualize error rates
-cat app.jsonl | datacat --bar level
+cat app.jsonl | datcat --bar level
 
 # Sparkline of response times
-cat access.jsonl | datacat --spark response_ms
+cat access.jsonl | datcat --spark response_ms
 
 # First 20 records as a table
-cat events.jsonl | datacat --table --head 20
+cat events.jsonl | datcat --table --head 20
 ```
 
 ### Metrics Dashboard
 
 ```bash
 # Sparkline of CPU usage
-datacat cpu_metrics.jsonl --spark usage --color cyan
+datcat cpu_metrics.jsonl --spark usage --color cyan
 
 # Histogram of latency distribution
-datacat request_logs.jsonl --histogram latency_ms -w 100
+datcat request_logs.jsonl --histogram latency_ms -w 100
 ```
 
 ## Python API
 
-datacat's parsing and display functions can be used programmatically:
+datcat's parsing and display functions can be used programmatically:
 
 ```python
-from dapple.extras.datacat.datacat import (
+from dapple.extras.datcat.datcat import (
     read_json, format_tree, format_json,
     flatten_to_table, dot_path_query,
     extract_field_values, extract_field_categories,
@@ -213,13 +213,13 @@ values = extract_field_values(data, "response_time")
 ## Entry Point
 
 ```
-datacat = dapple.extras.datacat.cli:main
+datcat = dapple.extras.datcat.cli:main
 ```
 
 ## Reference
 
 ```
-usage: datacat [-h] [--table] [--tree] [--json] [--no-color] [--cycle-color]
+usage: datcat [-h] [--table] [--tree] [--json] [--no-color] [--cycle-color]
                [--head N] [--tail N]
                [--plot PATH | --spark PATH | --bar PATH | --histogram PATH]
                [-r RENDERER] [-w WIDTH] [-H HEIGHT] [-o FILE] [--color COLOR]

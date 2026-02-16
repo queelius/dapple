@@ -100,15 +100,15 @@ class TestCsvCatBatch:
 
 
 # ---------------------------------------------------------------------------
-# datacat batch processing
+# datcat batch processing
 # ---------------------------------------------------------------------------
 
 class TestDataCatBatch:
-    """Batch processing tests for datacat."""
+    """Batch processing tests for datcat."""
 
     def _run(self, args: list[str], stdin: str = "") -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "dapple.extras.datacat.cli"] + args,
+            [sys.executable, "-m", "dapple.extras.datcat.cli"] + args,
             input=stdin, capture_output=True, text=True,
         )
 
