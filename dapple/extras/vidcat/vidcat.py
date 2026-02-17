@@ -35,6 +35,8 @@ class VidcatOptions:
         max_frames: Maximum number of frames to extract
         frames: Frame selection string (e.g., "1-10", "1,5,10", "-5", "100-")
         every: Extract interval (e.g., "1s", "30s", "1m")
+        play: Enable in-place playback using ANSI cursor movement
+        fps: Playback frames per second (used with play mode and asciinema)
     """
 
     renderer: str = "auto"
@@ -48,6 +50,8 @@ class VidcatOptions:
     max_frames: int = 10
     frames: str | None = None
     every: str | None = None
+    play: bool = False
+    fps: float = 10.0
 
 
 def check_ffmpeg() -> bool:
@@ -269,6 +273,49 @@ def render_frame(
     )
 
 
+def _play_frames(
+    frame_paths: list[Path],
+    options: VidcatOptions,
+    dest: TextIO,
+    fps: float = 10.0,
+) -> None:
+    """Play frames in-place using ANSI cursor movement.
+
+    Each frame after the first overwrites the previous frame by moving the
+    cursor up and clearing to end of screen.
+
+    Args:
+        frame_paths: List of frame image paths (in order)
+        options: Rendering options
+        dest: Output stream (should be a TTY for proper display)
+        fps: Playback frames per second
+    """
+    import io as _io
+
+    if not frame_paths:
+        return
+
+    frame_interval = 1.0 / fps
+
+    # Render first frame to count lines
+    buf = _io.StringIO()
+    render_frame(frame_paths[0], options, buf)
+    first_output = buf.getvalue()
+    line_count = first_output.count("\n")
+
+    # Write first frame
+    dest.write(first_output)
+    dest.flush()
+
+    # Overwrite for subsequent frames
+    for frame_path in frame_paths[1:]:
+        time.sleep(frame_interval)
+        # Cursor up + clear from cursor to end of screen
+        dest.write(f"\033[{line_count}A\033[J")
+        render_frame(frame_path, options, dest)
+        dest.flush()
+
+
 def vidcat(
     video_path: str | Path,
     *,
@@ -285,6 +332,8 @@ def vidcat(
     every: str | None = None,
     dest: TextIO | None = None,
     frame_delay: float = 0.0,
+    play: bool = False,
+    fps: float = 10.0,
 ) -> None:
     """Extract and render video frames to the terminal.
 
@@ -303,10 +352,13 @@ def vidcat(
         every: Extract interval (e.g., "1s", "30s", "1m")
         dest: Output stream (default: stdout)
         frame_delay: Delay between frames in seconds (for animation)
+        play: Enable in-place playback using ANSI cursor movement
+        fps: Playback frames per second (used with play mode)
 
     Example:
         >>> vidcat("animation.gif")
         >>> vidcat("video.mp4", frames="1-10", renderer="braille")
+        >>> vidcat("animation.gif", play=True, fps=15)
     """
     if not check_ffmpeg():
         raise RuntimeError(
@@ -329,12 +381,32 @@ def vidcat(
         max_frames=max_frames,
         frames=frames,
         every=every,
+        play=play,
+        fps=fps,
     )
 
     output = dest if dest is not None else sys.stdout
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
+
+        if play:
+            # In-place playback mode
+            if not hasattr(output, "isatty") or not output.isatty():
+                print(
+                    "Warning: --play requires a TTY; falling back to stacked output",
+                    file=sys.stderr,
+                )
+                # Fall through to stacked rendering below
+            else:
+                frame_paths = list(extract_frames(path, options, tmppath))
+                if not frame_paths:
+                    print("No frames extracted", file=sys.stderr)
+                    return
+                _play_frames(frame_paths, options, output, fps=fps)
+                return
+
+        # Stacked rendering (default, or fallback from non-TTY play)
         frame_count = 0
 
         for frame_path in extract_frames(path, options, tmppath):
@@ -557,6 +629,12 @@ def main() -> None:
         help="Delay between frames in seconds",
     )
 
+    # Playback mode
+    parser.add_argument(
+        "--play", action="store_true",
+        help="Play frames in-place (overwrites previous frame in terminal)",
+    )
+
     # Asciinema output
     parser.add_argument(
         "--asciinema", type=Path, metavar="FILE",
@@ -564,7 +642,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--fps", type=float, default=10.0,
-        help="Playback FPS for asciinema (default: 10)",
+        help="Playback FPS for --play and --asciinema (default: 10)",
     )
     parser.add_argument(
         "--title", type=str,
@@ -643,6 +721,8 @@ def main() -> None:
                     every=args.every,
                     dest=dest,
                     frame_delay=args.delay,
+                    play=args.play,
+                    fps=args.fps,
                 )
             except Exception as e:
                 errors.append(f"{video_path}: {e}")

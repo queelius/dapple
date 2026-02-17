@@ -124,6 +124,8 @@ class TestVidcatOptions:
         assert opts.max_frames == 10
         assert opts.frames is None
         assert opts.every is None
+        assert opts.play is False
+        assert opts.fps == 10.0
 
     def test_custom_values(self):
         opts = VidcatOptions(
@@ -348,6 +350,135 @@ class TestCLI:
 
         captured = capsys.readouterr()
         assert "File not found" in captured.err
+
+
+class TestPlayMode:
+    """Tests for in-place playback mode."""
+
+    def test_play_emits_cursor_up(self):
+        """When dest is TTY, play mode emits ANSI cursor-up codes."""
+        from dapple.extras.vidcat.vidcat import _play_frames
+
+        # Create fake frame files
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            for i in range(3):
+                (tmppath / f"frame_{i:04d}.png").write_bytes(b"fake")
+
+            frame_paths = sorted(tmppath.glob("frame_*.png"))
+            options = VidcatOptions(width=40)
+
+            # Create a mock TTY dest
+            buf = io.StringIO()
+            buf.isatty = lambda: True  # type: ignore[assignment]
+
+            # Mock render_frame to produce predictable output
+            def fake_render(path, opts, dest):
+                dest.write("line1\nline2\nline3\n")
+
+            with mock.patch("dapple.extras.vidcat.vidcat.render_frame", side_effect=fake_render):
+                with mock.patch("time.sleep"):
+                    _play_frames(frame_paths, options, buf, fps=10.0)
+
+            output = buf.getvalue()
+            # Should contain ANSI cursor-up codes for frames after the first
+            assert "\033[" in output
+            assert "A" in output
+            # First frame output, then cursor-up + clear + second frame, etc.
+            assert output.count("\033[J") == 2  # Two overwrites (for frames 2 and 3)
+
+    def test_play_non_tty_fallback(self, capsys):
+        """Non-TTY dest falls back to stacked output with warning."""
+        from dapple.extras.vidcat.vidcat import vidcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            for i in range(2):
+                (tmppath / f"frame_{i:04d}.png").write_bytes(b"fake")
+
+            frame_paths = sorted(tmppath.glob("frame_*.png"))
+
+            buf = io.StringIO()
+            # StringIO.isatty() returns False by default — non-TTY
+
+            # Mock the whole pipeline to avoid needing real video/ffmpeg
+            with mock.patch("dapple.extras.vidcat.vidcat.check_ffmpeg", return_value=True):
+                with mock.patch("pathlib.Path.exists", return_value=True):
+                    with mock.patch("dapple.extras.vidcat.vidcat.extract_frames", return_value=iter(frame_paths)):
+                        with mock.patch("dapple.extras.vidcat.vidcat.render_frame") as mock_render:
+                            mock_render.side_effect = lambda p, o, d: d.write("frame\n")
+                            vidcat("fake.mp4", play=True, dest=buf)
+
+            # Should have fallen back to stacked (no ANSI codes)
+            output = buf.getvalue()
+            assert "\033[" not in output
+
+            # Should have printed a warning to stderr
+            captured = capsys.readouterr()
+            assert "play" in captured.err.lower() or "tty" in captured.err.lower()
+
+    def test_fps_controls_delay(self):
+        """Verify fps parameter controls the sleep interval."""
+        from dapple.extras.vidcat.vidcat import _play_frames
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            for i in range(3):
+                (tmppath / f"frame_{i:04d}.png").write_bytes(b"fake")
+
+            frame_paths = sorted(tmppath.glob("frame_*.png"))
+            options = VidcatOptions(width=40)
+
+            buf = io.StringIO()
+            buf.isatty = lambda: True  # type: ignore[assignment]
+
+            def fake_render(path, opts, dest):
+                dest.write("line1\nline2\n")
+
+            with mock.patch("dapple.extras.vidcat.vidcat.render_frame", side_effect=fake_render):
+                with mock.patch("time.sleep") as mock_sleep:
+                    _play_frames(frame_paths, options, buf, fps=5.0)
+
+            # fps=5.0 means 0.2s between frames
+            assert mock_sleep.call_count == 2  # Called for frames 2 and 3
+            mock_sleep.assert_called_with(pytest.approx(0.2))
+
+    def test_play_single_frame_no_cursor_codes(self):
+        """With only one frame, no cursor-up codes should be emitted."""
+        from dapple.extras.vidcat.vidcat import _play_frames
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            (tmppath / "frame_0001.png").write_bytes(b"fake")
+
+            frame_paths = sorted(tmppath.glob("frame_*.png"))
+            options = VidcatOptions(width=40)
+
+            buf = io.StringIO()
+            buf.isatty = lambda: True  # type: ignore[assignment]
+
+            def fake_render(path, opts, dest):
+                dest.write("line1\nline2\n")
+
+            with mock.patch("dapple.extras.vidcat.vidcat.render_frame", side_effect=fake_render):
+                with mock.patch("time.sleep") as mock_sleep:
+                    _play_frames(frame_paths, options, buf, fps=10.0)
+
+            output = buf.getvalue()
+            # No ANSI cursor codes for single frame
+            assert "\033[" not in output
+            mock_sleep.assert_not_called()
+
+    def test_play_cli_flag(self):
+        """Test that --play flag is accepted by CLI parser."""
+        import sys
+
+        with mock.patch.object(sys, "argv", ["vidcat", "--play", "/nonexistent/video.mp4"]):
+            with mock.patch("dapple.extras.vidcat.vidcat.check_ffmpeg", return_value=True):
+                with pytest.raises(SystemExit) as exc_info:
+                    from dapple.extras.vidcat.vidcat import main
+                    main()
+                assert exc_info.value.code == 1
 
 
 class TestParseErrors:
