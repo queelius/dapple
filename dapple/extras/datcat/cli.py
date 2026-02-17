@@ -1,4 +1,4 @@
-"""CLI entry point for datcat — terminal JSON/JSONL viewer."""
+"""CLI entry point for datcat — terminal data viewer (JSON, JSONL, CSV, TSV)."""
 
 from __future__ import annotations
 
@@ -7,32 +7,37 @@ import sys
 from pathlib import Path
 from typing import Iterator, TextIO
 
+from dapple.extras.common import unescape_delimiter
 from dapple.extras.datcat.datcat import (
+    detect_format,
     dot_path_query,
     extract_field_categories,
     extract_field_values,
     flatten_to_table,
     format_json,
     format_tree,
+    read_csv,
     read_json,
+    select_columns,
+    sort_records,
 )
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="datcat",
-        description="Terminal JSON/JSONL viewer with visualization modes.",
+        description="Terminal data viewer for JSON, JSONL, CSV, and TSV with visualization modes.",
     )
 
     parser.add_argument(
         "files",
         nargs="*",
-        help="JSON/JSONL file(s) to display (reads stdin if omitted)",
+        help="Data file(s) to display (reads stdin if omitted)",
     )
     parser.add_argument(
         "-q", "--query",
         metavar="PATH",
-        help="Dot-path query (e.g. .database.host)",
+        help="Dot-path query (e.g. .database.host) — JSON/JSONL only",
     )
 
     # Display mode options
@@ -40,12 +45,12 @@ def _build_parser() -> argparse.ArgumentParser:
     display_group.add_argument(
         "--table",
         action="store_true",
-        help="Flatten JSONL records to a table",
+        help="Flatten JSONL records to a table (CSV/TSV always shown as table)",
     )
     display_group.add_argument(
         "--tree",
         action="store_true",
-        help="Show tree view with box-drawing characters (default)",
+        help="Show tree view with box-drawing characters (default for JSON)",
     )
     display_group.add_argument(
         "--json",
@@ -67,14 +72,40 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         metavar="N",
         dest="head_n",
-        help="Show first N records (JSONL)",
+        help="Show first N records/rows",
     )
     display_group.add_argument(
         "--tail",
         type=int,
         metavar="N",
         dest="tail_n",
-        help="Show last N records (JSONL)",
+        help="Show last N records/rows",
+    )
+
+    # CSV-specific options
+    csv_group = parser.add_argument_group("CSV/TSV options")
+    csv_group.add_argument(
+        "-d", "--delimiter",
+        help="Explicit delimiter (default: auto-detect)",
+    )
+    csv_group.add_argument(
+        "--no-header",
+        action="store_true",
+        help="Data has no header row (CSV/TSV only)",
+    )
+    csv_group.add_argument(
+        "--sort",
+        metavar="COLUMN",
+        help="Sort by column",
+    )
+    csv_group.add_argument(
+        "--cols",
+        help="Comma-separated column names to select",
+    )
+    csv_group.add_argument(
+        "--desc",
+        action="store_true",
+        help="Sort descending (use with --sort)",
     )
 
     # Plot mode (mutually exclusive)
@@ -83,22 +114,27 @@ def _build_parser() -> argparse.ArgumentParser:
     plot_mx.add_argument(
         "--plot",
         metavar="PATH",
-        help="Line plot of a numeric field (dot-path)",
+        help="Line plot of a numeric field (dot-path or column name)",
     )
     plot_mx.add_argument(
         "--spark",
         metavar="PATH",
-        help="Sparkline of a numeric field (dot-path)",
+        help="Sparkline of a numeric field (dot-path or column name)",
     )
     plot_mx.add_argument(
         "--bar",
         metavar="PATH",
-        help="Bar chart of category counts (dot-path)",
+        help="Bar chart of category counts (dot-path or column name)",
     )
     plot_mx.add_argument(
         "--histogram",
         metavar="PATH",
-        help="Histogram of a numeric field (dot-path)",
+        help="Histogram of a numeric field (dot-path or column name)",
+    )
+    plot_mx.add_argument(
+        "--heatmap",
+        metavar="COLUMNS",
+        help="Heatmap of multiple numeric columns (comma-separated)",
     )
 
     # Plot options
@@ -156,7 +192,8 @@ def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, str | None, str
 
 
 def _is_plot_mode(args: argparse.Namespace) -> bool:
-    return any((args.plot, args.spark, args.bar, args.histogram))
+    return any((args.plot, args.spark, args.bar, args.histogram,
+                getattr(args, "heatmap", None)))
 
 
 _BOOL_STRINGS = {"true", "false"}
@@ -223,7 +260,7 @@ def _format_table_output(
             header_cells.append(f"{BOLD}{CYAN}{h:<{widths[i]}}{RESET}")
     lines.append("  ".join(header_cells))
 
-    sep_cells = [DIM + "─" * w + RESET for w in widths]
+    sep_cells = [DIM + "\u2500" * w + RESET for w in widths]
     lines.append("  ".join(sep_cells))
 
     for row in rows:
@@ -252,8 +289,57 @@ def _format_table_output(
     return "\n".join(lines)
 
 
-def _run_display_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
+def _read_input(
+    text: str, name: str, args: argparse.Namespace,
+) -> tuple[object, str]:
+    """Parse text and return (data, fmt).
+
+    Returns:
+        (data, fmt) where data is parsed data and fmt is "json", "jsonl", or "csv".
+    """
+    filename = name if name != "<stdin>" else None
+    fmt = detect_format(text, filename=filename)
+
+    if fmt == "csv":
+        delimiter = unescape_delimiter(args.delimiter) if args.delimiter else None
+        records = read_csv(
+            text,
+            delimiter=delimiter,
+            has_header=not args.no_header,
+        )
+        return records, "csv"
+    else:
+        data = read_json(text)
+        return data, fmt
+
+
+def _run_display_mode(data, fmt: str, args: argparse.Namespace, dest: TextIO) -> None:
     """Handle display/query mode output."""
+    if fmt == "csv":
+        # CSV data is always list[dict] — show as table
+        records = data
+
+        # Apply column selection
+        if args.cols:
+            col_names = [c.strip() for c in args.cols.split(",")]
+            records = select_columns(records, col_names)
+
+        # Apply sorting
+        if args.sort:
+            records = sort_records(records, args.sort, reverse=args.desc)
+
+        # Apply head/tail
+        if args.head_n is not None:
+            records = records[:args.head_n]
+        elif args.tail_n is not None:
+            records = records[-args.tail_n:]
+
+        headers, rows = flatten_to_table(records)
+        output = _format_table_output(headers, rows, cycle_colors=args.cycle_color)
+        dest.write(output + "\n")
+        return
+
+    # JSON/JSONL path
     # Apply head/tail for list data
     if isinstance(data, list):
         if args.head_n is not None:
@@ -277,14 +363,42 @@ def _run_display_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
     dest.write(output + "\n")
 
 
-def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
-    """Render a chart from JSON data using vizlib."""
-    from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
-    from dapple.extras.vizlib.charts import bar_chart, histogram, line_plot, sparkline
-    from dapple.extras.vizlib.colors import parse_color
+def _run_plot_mode(data, fmt: str, args: argparse.Namespace, dest: TextIO) -> None:
+    """Render a chart from data using vizlib or text charts."""
+    if fmt == "csv":
+        records = data
+        # Apply column selection before plotting
+        if args.cols:
+            col_names = [c.strip() for c in args.cols.split(",")]
+            records = select_columns(records, col_names)
+        # Apply sorting before plotting
+        if args.sort:
+            records = sort_records(records, args.sort, reverse=args.desc)
+    else:
+        records = data
+        if not isinstance(records, list):
+            raise ValueError("plot mode requires JSONL input (array of records)")
 
-    if not isinstance(data, list):
-        raise ValueError("plot mode requires JSONL input (array of records)")
+    # Text chart modes (bar, spark) — use textchart for inline display
+    if args.bar:
+        from dapple.textchart import text_bar_chart
+        labels, values = extract_field_categories(records, args.bar)
+        dest.write(text_bar_chart(labels, values, width=args.width, title=args.bar) + "\n")
+        return
+
+    if args.spark:
+        # For CSV data, use text sparkline; for JSON, use vizlib sparkline
+        if fmt == "csv":
+            from dapple.textchart import text_sparkline
+            labels, values = extract_field_categories(records, args.spark)
+            dest.write(text_sparkline(labels, values, title=args.spark) + "\n")
+            return
+
+    # Bitmap chart modes — require vizlib / numpy
+    from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
+    from dapple.extras.vizlib.charts import heatmap as heatmap_chart
+    from dapple.extras.vizlib.charts import histogram, line_plot, sparkline
+    from dapple.extras.vizlib.colors import COLOR_PALETTE, parse_color
 
     # Parse --color if provided
     color = None
@@ -296,22 +410,19 @@ def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
     char_w = args.width or min(term_cols // 2, 60)
     char_h = args.height or min(10, max(6, term_lines // 5))
     px_w, px_h = pixel_dimensions(renderer, char_w, char_h)
-    # Line thickness: 3px so lines are visible in braille/character renderers
     line_thick = max(1, min(3, px_h // 10))
 
-    from dapple.extras.vizlib.colors import COLOR_PALETTE
-
     if args.spark:
-        values = extract_field_values(data, args.spark)
+        values = extract_field_values(records, args.spark)
         canvas = sparkline(values, width=px_w, height=px_h, color=color, thickness=line_thick)
     elif args.plot:
         # Support comma-separated field paths for multi-series
         field_paths = [p.strip() for p in args.plot.split(",")]
-        primary_values = extract_field_values(data, field_paths[0])
+        primary_values = extract_field_values(records, field_paths[0])
         if len(field_paths) > 1:
             extra_series = []
             for i, fp in enumerate(field_paths[1:]):
-                s_values = extract_field_values(data, fp)
+                s_values = extract_field_values(records, fp)
                 s_color = COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]
                 extra_series.append((s_values, s_color))
             canvas = line_plot(
@@ -320,12 +431,15 @@ def _run_plot_mode(data, args: argparse.Namespace, dest: TextIO) -> None:
             )
         else:
             canvas = line_plot(primary_values, width=px_w, height=px_h, color=color, thickness=line_thick)
-    elif args.bar:
-        labels, counts = extract_field_categories(data, args.bar)
-        canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)
     elif args.histogram:
-        values = extract_field_values(data, args.histogram)
+        values = extract_field_values(records, args.histogram)
         canvas = histogram(values, width=px_w, height=px_h, color=color)
+    elif getattr(args, "heatmap", None):
+        col_names = [c.strip() for c in args.heatmap.split(",")]
+        grid: list[list[float]] = []
+        for col in col_names:
+            grid.append(extract_field_values(records, col))
+        canvas = heatmap_chart(grid, width=px_w, height=px_h)
     else:
         return
 
@@ -349,7 +463,7 @@ def main() -> None:
                 continue
 
             try:
-                data = read_json(text)
+                data, fmt = _read_input(text, name, args)
 
                 # Print separator for multiple files
                 if args.files and len(args.files) > 1:
@@ -361,9 +475,9 @@ def main() -> None:
                     first_file = False
 
                 if _is_plot_mode(args):
-                    _run_plot_mode(data, args, dest)
+                    _run_plot_mode(data, fmt, args, dest)
                 else:
-                    _run_display_mode(data, args, dest)
+                    _run_display_mode(data, fmt, args, dest)
             except Exception as e:
                 errors.append(f"{name}: {e}")
                 continue

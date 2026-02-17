@@ -1,52 +1,75 @@
-"""Core JSON/JSONL parsing, queries, formatting, and data extraction.
+"""Core data parsing, queries, formatting, and extraction.
 
-Provides functions for reading JSON/JSONL, dot-path queries, syntax-colored
-pretty-printing, tree views, and tabular flattening. All parsing uses
-stdlib json — no external dependencies.
+Handles JSON, JSONL, CSV, and TSV. Provides functions for reading,
+querying, formatting, and extracting numeric/categorical data.
+All parsing uses stdlib json and csv -- no external dependencies.
 """
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import re
+from collections import Counter
+from pathlib import Path
 from typing import Any
 
 
-def detect_format(text: str) -> str:
-    """Detect whether text is JSON or JSONL.
+# ── Format detection ──────────────────────────────────────────────────
 
-    JSONL has multiple JSON values separated by newlines, where each
-    line starts with '{' or '['. Plain JSON starts with '{' or '[' as
-    a single top-level value.
+
+def detect_format(text: str, filename: str | None = None) -> str:
+    """Detect data format: json, jsonl, or csv.
+
+    Uses filename extension first (if provided), then content sniffing.
+
+    Args:
+        text: Input text.
+        filename: Optional filename for extension-based detection.
 
     Returns:
-        "json" or "jsonl"
+        "json", "jsonl", or "csv"
     """
+    if filename:
+        ext = Path(filename).suffix.lower()
+        if ext in (".csv", ".tsv"):
+            return "csv"
+        if ext == ".jsonl":
+            return "jsonl"
+        if ext == ".json":
+            return "json"
+
     stripped = text.strip()
     if not stripped:
         return "json"
 
-    lines = [line.strip() for line in stripped.split("\n") if line.strip()]
-    if len(lines) <= 1:
+    # Content sniffing: try JSON first
+    if stripped.startswith(("{", "[")):
+        # Check for JSONL (multiple JSON values on separate lines)
+        lines = [line.strip() for line in stripped.split("\n") if line.strip()]
+        if len(lines) <= 1:
+            return "json"
+
+        first = lines[0]
+        try:
+            json.loads(first)
+            if len(lines) > 1:
+                try:
+                    json.loads(lines[1])
+                    return "jsonl"
+                except json.JSONDecodeError:
+                    return "json"
+        except json.JSONDecodeError:
+            pass
+
         return "json"
 
-    # If the first line is a complete JSON value and the second line
-    # also starts a JSON value, treat as JSONL
-    first = lines[0]
-    try:
-        json.loads(first)
-        # First line is valid JSON on its own — check if second line is too
-        if len(lines) > 1:
-            second = lines[1]
-            try:
-                json.loads(second)
-                return "jsonl"
-            except json.JSONDecodeError:
-                return "json"
-    except json.JSONDecodeError:
-        pass
+    # Not JSON-looking — treat as CSV/TSV
+    return "csv"
 
-    return "json"
+
+# ── JSON reading ─────────────────────────────────────────────────────
 
 
 def read_json(text: str) -> list[dict] | dict | list:
@@ -69,6 +92,132 @@ def read_json(text: str) -> list[dict] | dict | list:
         return records
 
     return json.loads(text)
+
+
+# ── CSV reading ──────────────────────────────────────────────────────
+
+
+def detect_delimiter(sample: str) -> str:
+    """Auto-detect the delimiter from a text sample.
+
+    Uses csv.Sniffer with a fallback to comma if detection fails.
+    """
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",\t|;")
+        return dialect.delimiter
+    except csv.Error:
+        return ","
+
+
+def read_csv(
+    text: str,
+    delimiter: str | None = None,
+    has_header: bool = True,
+) -> list[dict]:
+    """Read CSV/TSV text into a list of dicts.
+
+    Args:
+        text: CSV/TSV text content.
+        delimiter: Explicit delimiter, or None for auto-detect.
+        has_header: If True, first row is treated as headers.
+
+    Returns:
+        List of dicts (one per row), with header names as keys.
+        Returns empty list for empty input.
+    """
+    if not text.strip():
+        return []
+
+    if delimiter is None:
+        delimiter = detect_delimiter(text[:8192])
+
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    all_rows = list(reader)
+
+    if not all_rows:
+        return []
+
+    if has_header:
+        headers = all_rows[0]
+        data_rows = all_rows[1:]
+    else:
+        ncols = max(len(r) for r in all_rows) if all_rows else 0
+        headers = [str(i) for i in range(ncols)]
+        data_rows = all_rows
+
+    records: list[dict] = []
+    for row in data_rows:
+        rec: dict[str, str] = {}
+        for i, h in enumerate(headers):
+            rec[h] = row[i] if i < len(row) else ""
+        records.append(rec)
+
+    return records
+
+
+# ── Record manipulation ──────────────────────────────────────────────
+
+
+def select_columns(records: list[dict], cols: list[str]) -> list[dict]:
+    """Select a subset of columns by name.
+
+    Args:
+        records: List of dicts.
+        cols: Column names to keep.
+
+    Returns:
+        New list of dicts with only the selected keys.
+
+    Raises:
+        ValueError: If a column name is not found.
+    """
+    if not records:
+        return []
+
+    # Validate column names against first record
+    available_keys = list(records[0].keys())
+    for col in cols:
+        if col not in records[0]:
+            available = ", ".join(available_keys)
+            raise ValueError(f"Column '{col}' not found. Available: {available}")
+
+    return [{col: rec.get(col, "") for col in cols} for rec in records]
+
+
+def sort_records(
+    records: list[dict], column: str, reverse: bool = False
+) -> list[dict]:
+    """Sort records by a column. Attempts numeric sort, falls back to string.
+
+    Args:
+        records: List of dicts.
+        column: Column name to sort by.
+        reverse: If True, sort descending.
+
+    Returns:
+        New sorted list of dicts.
+
+    Raises:
+        ValueError: If column not found.
+    """
+    if not records:
+        return []
+
+    if column not in records[0]:
+        available = ", ".join(records[0].keys())
+        raise ValueError(f"Column '{column}' not found. Available: {available}")
+
+    def sort_key(rec: dict) -> tuple:
+        val = str(rec.get(column, ""))
+        try:
+            return (0, float(val))
+        except (ValueError, TypeError):
+            return (1, val.lower())
+
+    return sorted(records, key=sort_key, reverse=reverse)
+
+
+# ── Dot-path queries ─────────────────────────────────────────────────
 
 
 def dot_path_query(data: Any, path: str) -> Any:
@@ -245,8 +394,8 @@ def _build_tree(
     label: str = "",
 ) -> None:
     """Recursively build tree lines."""
-    connector = "" if is_root else ("└── " if is_last else "├── ")
-    child_prefix = prefix + ("" if is_root else ("    " if is_last else "│   "))
+    connector = "" if is_root else ("\u2514\u2500\u2500 " if is_last else "\u251c\u2500\u2500 ")
+    child_prefix = prefix + ("" if is_root else ("    " if is_last else "\u2502   "))
 
     if isinstance(data, dict):
         if label:
@@ -260,7 +409,7 @@ def _build_tree(
             if isinstance(val, (dict, list)):
                 _build_tree(val, lines, child_prefix, last, label=key)
             else:
-                branch = "└── " if last else "├── "
+                branch = "\u2514\u2500\u2500 " if last else "\u251c\u2500\u2500 "
                 formatted_val = _format_leaf(val)
                 lines.append(f"{child_prefix}{branch}{_WHITE_BOLD}{key}{_RESET}: {formatted_val}")
 
@@ -275,7 +424,7 @@ def _build_tree(
             if isinstance(item, (dict, list)):
                 _build_tree(item, lines, child_prefix, last, label=f"[{i}]")
             else:
-                branch = "└── " if last else "├── "
+                branch = "\u2514\u2500\u2500 " if last else "\u251c\u2500\u2500 "
                 formatted_val = _format_leaf(item)
                 lines.append(f"{child_prefix}{branch}{_DIM}[{i}]{_RESET}: {formatted_val}")
     else:
@@ -352,14 +501,29 @@ def _stringify(val: Any) -> str:
 # ── Data extraction for plotting ──────────────────────────────────────
 
 
+def _normalize_path(path: str) -> str:
+    """Normalize a field path: add leading dot if missing.
+
+    For CSV data, users pass plain column names like 'score'.
+    For JSON data, users pass dot-paths like '.data.val'.
+    This normalizes both to dot-path form.
+    """
+    if not path:
+        return path
+    if not path.startswith(".") and not path.startswith("["):
+        return f".{path}"
+    return path
+
+
 def extract_field_values(
     records: list[dict], path: str
 ) -> list[float]:
-    """Extract numeric values from JSONL records using a dot-path.
+    """Extract numeric values from records using a field name or dot-path.
 
     Args:
-        records: List of JSON objects.
-        path: Dot-path to a numeric field (e.g. '.latency').
+        records: List of dicts.
+        path: Dot-path to a numeric field (e.g. '.latency') or plain
+            column name (e.g. 'score').
 
     Returns:
         List of float values (skips non-numeric).
@@ -367,8 +531,9 @@ def extract_field_values(
     Raises:
         ValueError: If no numeric values found.
     """
+    normalized = _normalize_path(path)
     values: list[float] = []
-    segments = _parse_path(path)
+    segments = _parse_path(normalized)
 
     for rec in records:
         try:
@@ -389,13 +554,13 @@ def extract_field_values(
 def extract_field_categories(
     records: list[dict], path: str
 ) -> tuple[list[str], list[float]]:
-    """Extract category labels and counts from JSONL records.
+    """Extract category labels and counts from records.
 
     Counts occurrences of each unique value at the given path.
 
     Args:
-        records: List of JSON objects.
-        path: Dot-path to a field.
+        records: List of dicts.
+        path: Dot-path or plain column name.
 
     Returns:
         (labels, counts) tuple sorted by count descending.
@@ -403,10 +568,9 @@ def extract_field_categories(
     Raises:
         ValueError: If no values found.
     """
-    from collections import Counter
-
+    normalized = _normalize_path(path)
     raw_values: list[str] = []
-    segments = _parse_path(path)
+    segments = _parse_path(normalized)
 
     for rec in records:
         try:

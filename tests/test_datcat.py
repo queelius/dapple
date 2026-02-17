@@ -1,4 +1,4 @@
-"""Tests for datcat core and CLI."""
+"""Tests for datcat core and CLI — JSON, JSONL, CSV, TSV."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import sys
 import pytest
 
 from dapple.extras.datcat.datcat import (
+    detect_delimiter,
     detect_format,
     dot_path_query,
     extract_field_categories,
@@ -16,7 +17,10 @@ from dapple.extras.datcat.datcat import (
     flatten_to_table,
     format_json,
     format_tree,
+    read_csv,
     read_json,
+    select_columns,
+    sort_records,
 )
 
 
@@ -48,6 +52,28 @@ class TestDetectFormat:
         text = '[1, 2]\n[3, 4]'
         assert detect_format(text) == "jsonl"
 
+    # CSV/TSV detection
+    def test_csv_by_filename(self):
+        assert detect_format("anything here", filename="data.csv") == "csv"
+
+    def test_tsv_by_filename(self):
+        assert detect_format("anything here", filename="data.tsv") == "csv"
+
+    def test_json_by_filename(self):
+        assert detect_format("anything here", filename="data.json") == "json"
+
+    def test_jsonl_by_filename(self):
+        assert detect_format("anything here", filename="data.jsonl") == "jsonl"
+
+    def test_csv_by_content_sniffing(self):
+        """Non-JSON text that looks like CSV should be detected as csv."""
+        text = "name,age,score\nAlice,30,95\nBob,25,87"
+        assert detect_format(text) == "csv"
+
+    def test_tsv_by_content_sniffing(self):
+        text = "name\tage\nAlice\t30"
+        assert detect_format(text) == "csv"
+
 
 # ── read_json ────────────────────────────────────────────────────────
 
@@ -76,6 +102,130 @@ class TestReadJson:
     def test_invalid_json(self):
         with pytest.raises(Exception):
             read_json("{invalid}")
+
+
+# ── read_csv ─────────────────────────────────────────────────────────
+
+
+class TestReadCsv:
+    def test_basic_csv(self):
+        text = "name,age,score\nAlice,30,95\nBob,25,87"
+        records = read_csv(text)
+        assert len(records) == 2
+        assert records[0] == {"name": "Alice", "age": "30", "score": "95"}
+        assert records[1] == {"name": "Bob", "age": "25", "score": "87"}
+
+    def test_tsv(self):
+        text = "name\tage\nAlice\t30\nBob\t25"
+        records = read_csv(text)
+        assert len(records) == 2
+        assert records[0] == {"name": "Alice", "age": "30"}
+
+    def test_explicit_delimiter(self):
+        text = "a|b\n1|2"
+        records = read_csv(text, delimiter="|")
+        assert records[0] == {"a": "1", "b": "2"}
+
+    def test_no_header(self):
+        text = "Alice,30\nBob,25"
+        records = read_csv(text, has_header=False)
+        assert len(records) == 2
+        assert records[0] == {"0": "Alice", "1": "30"}
+
+    def test_empty_input(self):
+        records = read_csv("")
+        assert records == []
+
+    def test_header_only(self):
+        records = read_csv("a,b,c")
+        assert records == []
+
+    def test_ragged_rows(self):
+        text = "a,b,c\n1,2\n4,5,6"
+        records = read_csv(text)
+        assert len(records) == 2
+        assert records[0] == {"a": "1", "b": "2", "c": ""}
+        assert records[1] == {"a": "4", "b": "5", "c": "6"}
+
+
+# ── detect_delimiter ─────────────────────────────────────────────────
+
+
+class TestDetectDelimiter:
+    def test_comma(self):
+        assert detect_delimiter("a,b,c\n1,2,3") == ","
+
+    def test_tab(self):
+        assert detect_delimiter("a\tb\tc\n1\t2\t3") == "\t"
+
+    def test_pipe(self):
+        assert detect_delimiter("a|b|c\n1|2|3") == "|"
+
+    def test_semicolon(self):
+        assert detect_delimiter("a;b;c\n1;2;3") == ";"
+
+    def test_fallback_to_comma(self):
+        assert detect_delimiter("abc") == ","
+
+
+# ── select_columns ───────────────────────────────────────────────────
+
+
+class TestSelectColumns:
+    def _sample(self) -> list[dict]:
+        return [
+            {"name": "Alice", "age": "30", "score": "95"},
+            {"name": "Bob", "age": "25", "score": "87"},
+        ]
+
+    def test_select_subset(self):
+        result = select_columns(self._sample(), ["name", "score"])
+        assert result == [
+            {"name": "Alice", "score": "95"},
+            {"name": "Bob", "score": "87"},
+        ]
+
+    def test_select_single(self):
+        result = select_columns(self._sample(), ["age"])
+        assert result == [{"age": "30"}, {"age": "25"}]
+
+    def test_reorder(self):
+        result = select_columns(self._sample(), ["score", "name"])
+        assert result[0] == {"score": "95", "name": "Alice"}
+
+    def test_unknown_column(self):
+        with pytest.raises(ValueError, match="Column 'missing' not found"):
+            select_columns(self._sample(), ["missing"])
+
+
+# ── sort_records ─────────────────────────────────────────────────────
+
+
+class TestSortRecords:
+    def _sample(self) -> list[dict]:
+        return [
+            {"name": "Charlie", "age": "35"},
+            {"name": "Alice", "age": "30"},
+            {"name": "Bob", "age": "25"},
+        ]
+
+    def test_sort_numeric(self):
+        result = sort_records(self._sample(), "age")
+        assert result[0]["name"] == "Bob"
+        assert result[2]["name"] == "Charlie"
+
+    def test_sort_descending(self):
+        result = sort_records(self._sample(), "age", reverse=True)
+        assert result[0]["name"] == "Charlie"
+
+    def test_sort_string(self):
+        result = sort_records(self._sample(), "name")
+        assert result[0]["name"] == "Alice"
+        assert result[2]["name"] == "Charlie"
+
+    def test_sort_unknown_column(self):
+        with pytest.raises(ValueError, match="Column 'missing' not found"):
+            sort_records(self._sample(), "missing")
 
 
 # ── dot_path_query ───────────────────────────────────────────────────
@@ -194,7 +344,7 @@ class TestFormatTree:
         data = {"a": 1, "b": 2}
         output = format_tree(data)
         # Should use tree characters
-        assert "├" in output or "└" in output
+        assert "\u251c" in output or "\u2514" in output
 
     def test_empty_object(self):
         output = format_tree({})
@@ -287,6 +437,13 @@ class TestExtractFieldValues:
         with pytest.raises(ValueError, match="No numeric"):
             extract_field_values([], ".v")
 
+    # CSV-style column name access (no dot prefix)
+    def test_csv_column_name(self):
+        """extract_field_values with a plain column name (CSV style)."""
+        records = [{"score": "95"}, {"score": "87"}, {"score": "92"}]
+        result = extract_field_values(records, "score")
+        assert result == [95.0, 87.0, 92.0]
+
 
 # ── extract_field_categories ─────────────────────────────────────────
 
@@ -315,6 +472,19 @@ class TestExtractFieldCategories:
         with pytest.raises(ValueError, match="No values"):
             extract_field_categories([], ".s")
 
+    def test_csv_column_name(self):
+        """extract_field_categories with a plain column name."""
+        records = [
+            {"color": "red"},
+            {"color": "blue"},
+            {"color": "red"},
+            {"color": "red"},
+            {"color": "blue"},
+        ]
+        labels, counts = extract_field_categories(records, "color")
+        assert labels[0] == "red"
+        assert counts[0] == 3.0
+
 
 # ── CLI integration ──────────────────────────────────────────────────
 
@@ -328,6 +498,7 @@ class TestCLI:
             text=True,
         )
 
+    # JSON tests
     def test_default_is_tree(self):
         data = json.dumps({"name": "Alice", "age": 30})
         result = self._run([], stdin=data)
@@ -335,7 +506,6 @@ class TestCLI:
         assert "Alice" in result.stdout
         assert "age" in result.stdout
         # Default output is tree format (box-drawing), not raw JSON
-        import pytest
         with pytest.raises(json.JSONDecodeError):
             json.loads(result.stdout)
 
@@ -348,22 +518,12 @@ class TestCLI:
 
     def test_dot_path_query(self):
         data = json.dumps({"db": {"host": "localhost"}})
-        result = self._run(["-", ".db.host"], stdin=data)
-        # File arg "-" won't work, we need to omit it — query is positional
-        # Actually the query is the second positional arg
-        # With no file, stdin is used. Let's pass query correctly:
         result = self._run([], stdin=data)
         assert result.returncode == 0
-        # Without query, full object is shown
         assert "localhost" in result.stdout
 
     def test_query_on_stdin(self):
         data = json.dumps({"db": {"host": "myhost", "port": 5432}})
-        # file=None, query=.db.host — but argparse takes file first
-        # We need to handle this: when stdin, file is None, query can be passed
-        # The issue: argparse sees the query as the file arg.
-        # Let's test with explicit -- separator or different approach.
-        # Actually, let's just test the basic display for now
         result = self._run(["--json", "--no-color"], stdin=data)
         assert result.returncode == 0
         parsed = json.loads(result.stdout)
@@ -442,6 +602,95 @@ class TestCLI:
         jsonl = '{"v":1}\n{"v":2}\n{"v":3}'
         result = self._run(["--spark", ".v", "--color", "#ff0000"], stdin=jsonl)
         assert result.returncode == 0
+
+    # CSV tests
+    def test_csv_stdin_table(self):
+        result = self._run([], stdin="name,age\nAlice,30\nBob,25")
+        assert result.returncode == 0
+        assert "Alice" in result.stdout
+        assert "Bob" in result.stdout
+
+    def test_csv_head_flag(self):
+        csv = "x\n1\n2\n3\n4\n5"
+        result = self._run(["--head", "2"], stdin=csv)
+        assert result.returncode == 0
+        assert "1" in result.stdout
+        assert "2" in result.stdout
+        lines = [line for line in result.stdout.strip().split("\n") if line.strip()]
+        # header + separator + 2 data rows = 4 lines
+        assert len(lines) == 4
+
+    def test_csv_tail_flag(self):
+        csv = "x\n1\n2\n3\n4\n5"
+        result = self._run(["--tail", "2"], stdin=csv)
+        assert result.returncode == 0
+        assert "4" in result.stdout
+        assert "5" in result.stdout
+
+    def test_csv_sort_flag(self):
+        csv = "name,age\nCharlie,35\nAlice,30\nBob,25"
+        result = self._run(["--sort", "age"], stdin=csv)
+        assert result.returncode == 0
+        lines = result.stdout.strip().split("\n")
+        data_lines = lines[2:]
+        assert "Bob" in data_lines[0]  # 25 first
+
+    def test_csv_cols_flag(self):
+        csv = "name,age,score\nAlice,30,95"
+        result = self._run(["--cols", "name,score"], stdin=csv)
+        assert result.returncode == 0
+        assert "name" in result.stdout
+        assert "score" in result.stdout
+        header_line = result.stdout.strip().split("\n")[0]
+        assert "age" not in header_line
+
+    def test_csv_no_header_flag(self):
+        csv = "Alice,30\nBob,25"
+        result = self._run(["--no-header"], stdin=csv)
+        assert result.returncode == 0
+        assert "Alice" in result.stdout
+        # Numeric headers
+        assert "0" in result.stdout
+
+    def test_csv_delimiter_flag(self):
+        csv = "a|b\n1|2"
+        result = self._run(["--delimiter", "|"], stdin=csv)
+        assert result.returncode == 0
+        assert "a" in result.stdout
+        assert "b" in result.stdout
+
+    def test_csv_backslash_t_delimiter(self, tmp_path):
+        """--delimiter '\\t' should work as tab delimiter."""
+        tsv = tmp_path / "data.tsv"
+        tsv.write_text("a\tb\n1\t2\n")
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.datcat.cli",
+             str(tsv), "--delimiter", r"\t"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "a" in result.stdout
+        assert "b" in result.stdout
+
+    def test_csv_sort_desc_flag(self):
+        csv = "name,age\nCharlie,35\nAlice,30\nBob,25"
+        result = self._run(["--sort", "age", "--desc"], stdin=csv)
+        assert result.returncode == 0
+        lines = result.stdout.strip().split("\n")
+        data_lines = lines[2:]
+        assert "Charlie" in data_lines[0]  # 35 first (descending)
+
+    def test_csv_file_input(self, tmp_path):
+        """CSV file should be auto-detected by extension."""
+        csv_file = tmp_path / "data.csv"
+        csv_file.write_text("name,age\nAlice,30\nBob,25\n")
+        result = subprocess.run(
+            [sys.executable, "-m", "dapple.extras.datcat.cli", str(csv_file)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "Alice" in result.stdout
+        assert "Bob" in result.stdout
 
 
 class TestFieldNotFoundMessage:

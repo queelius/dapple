@@ -41,7 +41,6 @@ pdfcat = ["pillow>=9.0", "pypdfium2>=4.0"]
 mdcat = ["pillow>=9.0", "rich>=13.0"]
 vidcat = ["pillow>=9.0"]
 vizlib = []
-csvcat = []
 datcat = []
 compcat = ["pillow>=9.0"]
 thumbcat = ["pillow>=9.0"]
@@ -49,7 +48,7 @@ ansicat = []
 plotcat = []
 dashcat = ["pyyaml>=6.0"]
 # Bundles
-all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,csvcat,datcat,compcat,thumbcat,ansicat,plotcat,dashcat]"]
+all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,datcat,compcat,thumbcat,ansicat,plotcat,dashcat]"]
 # Development
 dev = [
     "pytest>=7.0",
@@ -74,7 +73,6 @@ funcat = "dapple.extras.funcat.funcat:main"
 pdfcat = "dapple.extras.pdfcat.pdfcat:main"
 mdcat = "dapple.extras.mdcat.mdcat:main"
 vidcat = "dapple.extras.vidcat.vidcat:main"
-csvcat = "dapple.extras.csvcat.cli:main"
 datcat = "dapple.extras.datcat.cli:main"
 compcat = "dapple.extras.compcat.compcat:main"
 thumbcat = "dapple.extras.thumbcat.thumbcat:main"

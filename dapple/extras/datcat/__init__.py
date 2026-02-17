@@ -1,7 +1,8 @@
-"""datcat - Terminal JSON/JSONL viewer with visualization modes.
+"""datcat - Terminal data viewer with visualization modes.
 
-Pretty-prints JSON with syntax coloring, supports dot-path queries,
-tree views, JSONL table flattening, and chart visualization via
+Unified viewer for structured data: JSON, JSONL, CSV, and TSV.
+Pretty-prints with syntax coloring, supports dot-path queries,
+tree views, table display, and chart visualization via
 vizlib/dapple renderers.
 """
 

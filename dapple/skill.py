@@ -26,8 +26,7 @@ _EXTRAS: dict[str, tuple[tuple[str, ...], str]] = {
     "pdfcat": (("PIL", "pypdfium2"), "PDF viewer"),
     "mdcat": (("PIL", "rich"), "Markdown viewer"),
     "vidcat": (("PIL",), "Video frame viewer"),
-    "csvcat": ((), "CSV/TSV viewer & plotter"),
-    "datcat": ((), "JSON/JSONL viewer & plotter"),
+    "datcat": ((), "Structured data viewer (JSON/JSONL/CSV/TSV) & plotter"),
     "funcat": ((), "Math expression plotter"),
     "compcat": (("PIL",), "Renderer comparison"),
     "thumbcat": (("PIL",), "Image contact sheet"),
@@ -103,31 +102,15 @@ vidcat video.mp4 --asciinema out.cast  # export to asciinema
 vidcat -r sextants -w 80 clip.mp4      # control width
 ```
 """,
-    "csvcat": """\
-### csvcat — CSV/TSV Viewer & Plotter
-Display CSV/TSV data as formatted tables or terminal plots.
-Best renderer for plots: **braille** (line/bar charts are line art).
-
-```bash
-csvcat data.csv                         # formatted table (no renderer)
-csvcat data.csv --plot score            # line plot of 'score' column
-csvcat data.csv --bar department        # bar chart of category counts
-csvcat data.csv --spark revenue         # sparkline of a numeric column
-csvcat data.csv --histogram age         # histogram of numeric column
-csvcat data.csv --heatmap "q1,q2,q3"   # heatmap of multiple columns
-csvcat data.csv --cols name,score       # select columns
-csvcat data.csv --sort score --desc     # sort by column
-csvcat -d $'\\t' data.tsv               # TSV file (use $'\\t' for tab)
-cat data.csv | csvcat                   # pipe from stdin
-```
-""",
     "datcat": """\
-### datcat — JSON/JSONL Viewer & Plotter
-Display structured data (JSON, JSONL) as formatted tables, spark
-lines, or terminal plots.
+### datcat — Structured Data Viewer & Plotter
+Display structured data (JSON, JSONL, CSV, TSV) as formatted tables,
+tree views, sparklines, or terminal plots. One tool for all tabular
+and hierarchical data.
 Best renderer for plots: **braille** (data charts are line art).
 
 ```bash
+# JSON / JSONL
 datcat records.json                    # tree view (default)
 datcat records.jsonl --table           # flatten JSONL to table
 datcat records.jsonl --plot latency    # line plot of a numeric field
@@ -136,6 +119,18 @@ datcat records.jsonl --bar region      # bar chart of category counts
 datcat data.json -q .results          # query nested dot-path
 datcat data.json --json               # syntax-colored JSON
 cat data.jsonl | datcat                # pipe from stdin
+
+# CSV / TSV
+datcat data.csv                        # formatted table (auto-detected)
+datcat data.csv --plot score           # line plot of a column
+datcat data.csv --bar department       # bar chart of category counts
+datcat data.csv --spark revenue        # sparkline of a column
+datcat data.csv --histogram age        # histogram of numeric column
+datcat data.csv --heatmap "q1,q2,q3"  # heatmap of multiple columns
+datcat data.csv --cols name,score      # select columns
+datcat data.csv --sort score --desc    # sort by column
+datcat data.csv -d $'\\t'              # explicit tab delimiter
+datcat data.csv --no-header            # first row is data, not headers
 ```
 """,
     "funcat": """\
@@ -287,10 +282,10 @@ name: dapple
 description: >-
   Use when the user asks to display, preview, or view files visually in their
   terminal, OR to plot mathematical functions, parametric curves, equations, or
-  data charts. Covers: images, PDFs, markdown, video, CSV, JSON, math/parametric
-  plots (funcat), ANSI art, contact sheets, dashboards,
-  renderer comparisons, or faceted data plots. Tools: imgcat, pdfcat, mdcat,
-  vidcat, csvcat, datcat, funcat, compcat, thumbcat, ansicat,
+  data charts. Covers: images, PDFs, markdown, video, structured data (JSON,
+  JSONL, CSV, TSV), math/parametric plots (funcat), ANSI art, contact sheets,
+  dashboards, renderer comparisons, or faceted data plots. Tools: imgcat,
+  pdfcat, mdcat, vidcat, datcat, funcat, compcat, thumbcat, ansicat,
   plotcat, dashcat. Output is terminal text meant for the user to read.
 ---
 

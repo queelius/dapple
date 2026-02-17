@@ -15,15 +15,15 @@ import pytest
 
 
 # ---------------------------------------------------------------------------
-# csvcat batch processing
+# datcat CSV batch processing (csvcat absorbed into datcat)
 # ---------------------------------------------------------------------------
 
 class TestCsvCatBatch:
-    """Batch processing tests for csvcat."""
+    """Batch processing tests for CSV via datcat (formerly csvcat)."""
 
     def _run(self, args: list[str], stdin: str = "") -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "dapple.extras.csvcat.cli"] + args,
+            [sys.executable, "-m", "dapple.extras.datcat.cli"] + args,
             input=stdin, capture_output=True, text=True,
         )
 
