@@ -322,6 +322,257 @@ class TestToAsciinema:
             with pytest.raises(ValueError, match="fps must be positive"):
                 to_asciinema("test.mp4", "output.cast", fps=-1)
 
+    def _run_to_asciinema(self, output_path, *, num_frames=3, fps=10.0,
+                          frame_width=40, frame_height=5, title=None,
+                          width=40):
+        """Helper that mocks ffmpeg/rendering and runs to_asciinema.
+
+        Each fake frame is frame_width chars wide and frame_height lines tall,
+        with a trailing newline (matching real renderer + imgcat behavior).
+        """
+        from dapple.extras.vidcat.vidcat import to_asciinema
+
+        # Build fake frame paths
+        frame_paths = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            for i in range(num_frames):
+                p = tmppath / f"frame_{i:04d}.png"
+                p.write_bytes(b"fake")
+                frame_paths.append(p)
+
+            # Fake render: produces frame_height lines of frame_width chars + trailing \n
+            def fake_render(path, opts, dest):
+                for row in range(frame_height):
+                    dest.write("X" * frame_width)
+                    if row < frame_height - 1:
+                        dest.write("\n")
+                dest.write("\n")  # trailing newline (mimics imgcat)
+
+            video_file = tmppath / "fake.mp4"
+            video_file.write_bytes(b"fake video")
+
+            with mock.patch("dapple.extras.vidcat.vidcat.check_ffmpeg", return_value=True):
+                with mock.patch("dapple.extras.vidcat.vidcat.extract_frames", return_value=iter(frame_paths)):
+                    with mock.patch("dapple.extras.vidcat.vidcat.render_frame", side_effect=fake_render):
+                        to_asciinema(
+                            str(video_file),
+                            str(output_path),
+                            fps=fps,
+                            width=width,
+                            title=title,
+                        )
+
+    def test_asciicast_header_format(self):
+        """Header must be valid asciicast v2 with correct fields."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path)
+
+            with open(output_path) as f:
+                header = json.loads(f.readline())
+
+            assert header["version"] == 2
+            assert "width" in header
+            assert "height" in header
+            assert "timestamp" in header
+            assert header["env"]["TERM"] == "xterm-256color"
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_header_dimensions(self):
+        """Header width/height must match actual rendered frame dimensions."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, frame_width=50, frame_height=10)
+
+            with open(output_path) as f:
+                header = json.loads(f.readline())
+
+            assert header["width"] == 50
+            # height = visible lines + 1 for cursor
+            assert header["height"] == 11
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_title(self):
+        """Title should appear in header when provided."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, title="My Video")
+
+            with open(output_path) as f:
+                header = json.loads(f.readline())
+
+            assert header["title"] == "My Video"
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_no_title_by_default(self):
+        """Title should not appear in header when not provided."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path)
+
+            with open(output_path) as f:
+                header = json.loads(f.readline())
+
+            assert "title" not in header
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_frame_events(self):
+        """Each frame should be a valid [timestamp, 'o', data] event."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=3)
+
+            with open(output_path) as f:
+                lines = f.readlines()
+
+            # Header + 3 frames + 1 hold event
+            assert len(lines) == 5
+
+            for line in lines[1:4]:  # frame events
+                event = json.loads(line)
+                assert len(event) == 3
+                assert isinstance(event[0], float)
+                assert event[1] == "o"
+                assert isinstance(event[2], str)
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_frame_timing(self):
+        """Frame timestamps should increment by 1/fps."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=4, fps=5.0)
+
+            with open(output_path) as f:
+                lines = f.readlines()
+
+            timestamps = []
+            for line in lines[1:5]:  # 4 frame events
+                event = json.loads(line)
+                timestamps.append(event[0])
+
+            assert timestamps[0] == pytest.approx(0.0)
+            assert timestamps[1] == pytest.approx(0.2)
+            assert timestamps[2] == pytest.approx(0.4)
+            assert timestamps[3] == pytest.approx(0.6)
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_clear_codes(self):
+        """Each frame should start with clear screen + cursor home."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=2)
+
+            with open(output_path) as f:
+                lines = f.readlines()
+
+            clear = "\033[2J\033[H"
+            for line in lines[1:3]:
+                event = json.loads(line)
+                data = event[2]
+                assert data.startswith(clear), f"Frame data should start with clear+home escape"
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_hold_event(self):
+        """Last event should be an empty hold event after last frame."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=3, fps=10.0)
+
+            with open(output_path) as f:
+                lines = f.readlines()
+
+            # Last line should be the hold event
+            hold_event = json.loads(lines[-1])
+            assert hold_event[1] == "o"
+            assert hold_event[2] == ""  # Empty data
+            # Hold timestamp should be ~1 second after the would-be next frame
+            # 3 frames at fps=10 -> timestamps 0.0, 0.1, 0.2
+            # After loop, timestamp=0.3, hold at 0.3+1.0=1.3
+            assert hold_event[0] == pytest.approx(1.3)
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_frame_content(self):
+        """Frame data should contain the rendered content."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=1, frame_width=20, frame_height=3)
+
+            with open(output_path) as f:
+                lines = f.readlines()
+
+            event = json.loads(lines[1])
+            data = event[2]
+
+            # Remove clear sequence
+            clear = "\033[2J\033[H"
+            content = data.replace(clear, "")
+
+            # Should contain the fake frame content
+            assert "X" * 20 in content
+            # Should have the right number of visible lines
+            visible_lines = [l for l in content.split("\n") if l]
+            assert len(visible_lines) == 3
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_all_lines_valid_json(self):
+        """Every line in the .cast file must be valid JSON."""
+        with tempfile.NamedTemporaryFile(suffix=".cast", delete=False) as f:
+            output_path = f.name
+
+        try:
+            self._run_to_asciinema(output_path, num_frames=5)
+
+            with open(output_path) as f:
+                for i, line in enumerate(f):
+                    try:
+                        json.loads(line)
+                    except json.JSONDecodeError:
+                        pytest.fail(f"Line {i} is not valid JSON: {line[:100]}")
+        finally:
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_asciicast_no_frames_raises(self):
+        """Should raise RuntimeError when no frames are extracted."""
+        from dapple.extras.vidcat.vidcat import to_asciinema
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            video_file = Path(tmpdir) / "fake.mp4"
+            video_file.write_bytes(b"fake")
+            output_path = Path(tmpdir) / "out.cast"
+
+            with mock.patch("dapple.extras.vidcat.vidcat.check_ffmpeg", return_value=True):
+                with mock.patch("dapple.extras.vidcat.vidcat.extract_frames", return_value=iter([])):
+                    with pytest.raises(RuntimeError, match="No frames extracted"):
+                        to_asciinema(str(video_file), str(output_path))
+
 
 class TestCLI:
     """Tests for CLI argument parsing."""

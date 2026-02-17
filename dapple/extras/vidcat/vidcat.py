@@ -526,19 +526,25 @@ def to_asciinema(
             render_frame(frame_path, options, buf)
             frames_data.append(buf.getvalue())
 
-        # Calculate actual height needed (count newlines in first frame)
+        # Measure actual dimensions from rendered first frame
         if frames_data:
-            actual_height = frames_data[0].count("\n") + 1
+            first_lines = frames_data[0].split("\n")
+            # Strip trailing empty line (renderer output ends with \n)
+            if first_lines and first_lines[-1] == "":
+                first_lines = first_lines[:-1]
+            actual_height = len(first_lines)
+            actual_width = max(len(line) for line in first_lines) if first_lines else term_width
         else:
             actual_height = term_height
+            actual_width = term_width
 
         # Write asciicast v2 file
         with open(out_path, "w", encoding="utf-8") as f:
             # Header
             header = {
                 "version": 2,
-                "width": term_width,
-                "height": actual_height + 1,  # +1 for padding
+                "width": actual_width,
+                "height": actual_height + 1,  # +1 for cursor row
                 "timestamp": int(time.time()),
                 "env": {"TERM": "xterm-256color"},
             }
@@ -557,6 +563,10 @@ def to_asciinema(
                 event = [timestamp, "o", clear + frame_data]
                 f.write(json.dumps(event) + "\n")
                 timestamp += frame_interval
+
+            # Hold last frame visible for 1 second
+            event = [timestamp + 1.0, "o", ""]
+            f.write(json.dumps(event) + "\n")
 
     print(f"Created: {out_path}", file=sys.stderr)
     print(f"Play with: asciinema play {out_path}", file=sys.stderr)
