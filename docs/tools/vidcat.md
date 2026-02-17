@@ -74,10 +74,30 @@ vidcat video.mp4 --grayscale           # Force grayscale
 vidcat video.mp4 --no-color            # Disable color
 ```
 
-### Animation
+### In-Place Playback
+
+The `--play` flag renders frames in-place (using ANSI cursor movement) for
+smooth animation directly in the terminal:
 
 ```bash
-# Add delay between frames for animation effect
+# Play video as in-place animation
+vidcat video.mp4 --play
+
+# Control playback speed
+vidcat video.mp4 --play --fps 15       # 15 frames per second
+vidcat animation.gif --play --fps 30   # Faster playback
+
+# Combine with renderer and width
+vidcat video.mp4 --play -r sextants -w 80
+```
+
+`--play` requires a TTY (interactive terminal). When piped or redirected, it
+falls back to stacked frame output with a warning.
+
+### Animation (Stacked)
+
+```bash
+# Add delay between frames for animation effect (stacked output)
 vidcat animation.gif --delay 0.1       # 100ms between frames
 vidcat video.mp4 --frames 1-30 --delay 0.05
 ```
@@ -175,7 +195,7 @@ usage: vidcat [-h] [-r {auto,braille,quadrants,sextants,ascii,sixel,kitty}]
               [-w WIDTH] [-H HEIGHT] [--frames FRAMES] [--every EVERY]
               [--max-frames MAX_FRAMES] [--dither] [--contrast] [--invert]
               [--grayscale] [--no-color] [-o OUTPUT] [--delay DELAY]
-              [--asciinema FILE] [--fps FPS] [--title TITLE]
+              [--play] [--asciinema FILE] [--fps FPS] [--title TITLE]
               [video]
 
 Display video frames in the terminal using dapple
@@ -197,7 +217,10 @@ options:
   --no-color            Disable color output
   -o, --output          Output file (default: stdout)
   --delay               Delay between frames in seconds
+
+playback:
+  --play                In-place playback (ANSI cursor movement, requires TTY)
   --asciinema FILE      Export to asciinema .cast file
-  --fps                 Playback FPS for asciinema (default: 10)
+  --fps                 Playback FPS for --play and --asciinema (default: 10)
   --title               Title for asciinema recording
 ```

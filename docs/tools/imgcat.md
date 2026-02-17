@@ -84,6 +84,27 @@ imgcat -o output.txt photo.jpg
 imgcat -r braille -o art.txt photo.jpg
 ```
 
+### Grid / Contact Sheet
+
+When multiple images are provided, imgcat renders them as a grid (contact sheet):
+
+```bash
+# Display all PNGs as a grid
+imgcat *.png
+
+# Control grid columns (default: 4)
+imgcat photos/*.jpg --cols 3
+
+# Hide filenames in grid mode
+imgcat *.png --no-titles
+
+# Combine with width control
+imgcat photos/*.jpg --cols 4 -w 120
+
+# Single image always renders directly (no grid)
+imgcat photo.jpg
+```
+
 ### Piping from stdin
 
 ```bash
@@ -149,6 +170,7 @@ imgcat = dapple.extras.imgcat.imgcat:main
 usage: imgcat [-h] [-r {auto,braille,quadrants,sextants,ascii,sixel,kitty,fingerprint}]
               [-w WIDTH] [-H HEIGHT] [--dither] [--contrast] [--invert]
               [-o OUTPUT] [--grayscale] [--no-color]
+              [--cols N] [--no-titles]
               [images ...]
 
 Display images in the terminal using dapple
@@ -166,4 +188,8 @@ options:
   -o, --output          Output file (default: stdout)
   --grayscale           Force grayscale output
   --no-color            Disable color output
+
+grid options:
+  --cols N              Number of grid columns for multiple images (default: 4)
+  --no-titles           Hide filenames in grid mode
 ```

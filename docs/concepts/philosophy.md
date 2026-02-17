@@ -74,7 +74,7 @@ This is how an engineer thinks too. The CLI pipeline makes that reasoning explic
 
 ## The Tool Philosophy
 
-dapple and its CLI tools (imgcat, funcat, pdfcat, vidcat, mdcat, csvcat, datcat) follow three principles that make them usable by both humans and AI agents.
+dapple and its CLI tools (imgcat, funcat, pdfcat, vidcat, mdcat, datcat, htmlcat) follow three principles that make them usable by both humans and AI agents.
 
 ### Help is documentation
 

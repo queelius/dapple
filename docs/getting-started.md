@@ -14,7 +14,7 @@ pip install dapple[funcat]          # math/parametric plotter
 pip install dapple[dashcat]         # YAML dashboard (adds pyyaml)
 
 # Bundles
-pip install dapple[all-tools]       # all 14 CLI tools
+pip install dapple[all-tools]       # all 11 CLI tools
 pip install dapple[adapters]        # PIL + matplotlib adapters
 pip install dapple[dev]             # development (tests + all deps)
 ```
@@ -99,4 +99,4 @@ render_image("photo.jpg")    # one-liner: load, detect, render
 - [Renderers](guide/renderers.md) — All seven renderers in detail
 - [Layout Engine](guide/layout.md) — Frame, Grid, and Canvas.fit()
 - [Charts API](guide/charts.md) — Character-dimension chart functions
-- [CLI Tools](tools/index.md) — All 14 terminal tools
+- [CLI Tools](tools/index.md) — All 11 terminal tools

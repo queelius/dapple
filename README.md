@@ -14,7 +14,7 @@ dapple unifies these approaches:
 - **Pluggable renderers** - Switch formats with one line: `canvas.out(braille)` or `canvas.out(quadrants)`
 - **Layout primitives** - Frame and Grid for composing multi-panel displays
 - **Charts API** - Sparklines, line plots, bar charts, histograms, heatmaps
-- **14 CLI tools** - View images, PDFs, markdown, video, data, math plots, and more
+- **11 CLI tools** - View images, PDFs, markdown, HTML, video, data, math plots, and more
 - **Stream-based output** - Write to stdout, files, or any text stream
 
 ## Installation
@@ -29,15 +29,15 @@ pip install dapple[pdfcat]          # PDF viewer (adds pypdfium2)
 pip install dapple[mdcat]           # markdown viewer (adds rich)
 pip install dapple[funcat]          # math/parametric plotter
 pip install dapple[vidcat]          # video frame viewer
-pip install dapple[csvcat]          # CSV/TSV viewer & plotter
-pip install dapple[datcat]          # JSON/JSONL viewer & plotter
+pip install dapple[datcat]          # structured data viewer (JSON/JSONL/CSV/TSV)
+pip install dapple[htmlcat]         # HTML viewer (adds rich, markdownify)
 pip install dapple[compcat]         # renderer comparison
 pip install dapple[ansicat]         # ANSI art viewer
 pip install dapple[plotcat]         # faceted data plots
 pip install dapple[dashcat]         # YAML-driven dashboard (adds pyyaml)
 
 # Bundles
-pip install dapple[all-tools]       # all 11 CLI tools
+pip install dapple[all-tools]       # all CLI tools
 pip install dapple[adapters]        # PIL + matplotlib adapters
 pip install dapple[dev]             # development (tests + all deps)
 ```
@@ -326,7 +326,7 @@ inverted = canvas.with_invert()
 
 ## CLI Tools
 
-dapple ships 14 command-line tools, each installed as a standalone entry point.
+dapple ships 11 command-line tools, each installed as a standalone entry point.
 
 ### Viewers
 
@@ -342,8 +342,11 @@ pdfcat document.pdf --dpi 300       # higher resolution
 mdcat README.md                     # render markdown with formatting
 mdcat README.md --images            # with inline images
 
-vidcat video.mp4                    # play video in terminal
+vidcat video.mp4                    # extract video frames
+vidcat video.mp4 --play             # in-place playback animation
 vidcat video.mp4 --every 1s         # 1 frame per second
+
+htmlcat page.html                   # view HTML in terminal
 
 ansicat artwork.ans -r sextants     # view ANSI art
 ```
@@ -351,12 +354,11 @@ ansicat artwork.ans -r sextants     # view ANSI art
 ### Data & Math
 
 ```bash
-csvcat data.csv                     # formatted table
-csvcat data.csv --plot line -y revenue,cost  # multi-series line plot
-
-datcat records.jsonl --plot line    # line plot from JSONL
+datcat data.csv                     # formatted CSV table
+datcat data.csv --plot revenue      # line plot from CSV column
+datcat records.jsonl --plot latency # line plot from JSONL
 datcat data.json -q .results       # query nested path
-datcat records.jsonl --spark        # sparkline summary
+datcat records.jsonl --spark latency # sparkline summary
 
 funcat "sin(x)"                    # plot math expression
 funcat "sin(x)" "cos(x)" --legend  # overlay with legend
@@ -369,7 +371,7 @@ funcat -p "t*cos(t),t*sin(t)"      # parametric spiral
 
 ```bash
 compcat photo.jpg braille sextants quadrants  # compare renderers side-by-side
-imgcat photos/*.jpg --cols 4 -w 120           # image contact sheet
+imgcat photos/*.jpg --cols 4 -w 120           # image grid / contact sheet
 ```
 
 ### Analysis

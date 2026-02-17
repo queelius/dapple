@@ -1,6 +1,6 @@
 # CLI Tools
 
-dapple ships 12 CLI tools as extras. Install individually or all at once:
+dapple ships 11 CLI tools as extras. Install individually or all at once:
 
 ```bash
 pip install dapple[all-tools]
@@ -24,18 +24,18 @@ All tools that produce graphical output share these flags:
 
 ## Viewers
 
-- **[imgcat](imgcat.md)** — Display images (JPEG, PNG, WebP, etc.)
-- **[vidcat](vidcat.md)** — Video frames, asciinema export
+- **[imgcat](imgcat.md)** — Display images (JPEG, PNG, WebP, etc.) with grid/contact sheet mode
+- **[vidcat](vidcat.md)** — Video frames, in-place playback, asciinema export
 - **[pdfcat](pdfcat.md)** — PDF page rendering
 - **[mdcat](mdcat.md)** — Markdown with Rich formatting and inline images
+- **[htmlcat](htmlcat.md)** — HTML viewer with Rich formatting and inline images
 - **[ansicat](ansicat.md)** — ANSI art viewer
 
 ## Data & Math
 
 - **[funcat](funcat.md)** — Math expressions and parametric curves, with pipeline chaining
-- **[csvcat](csvcat.md)** — CSV/TSV tables and multi-series charts
-- **[datcat](datcat.md)** — JSON/JSONL tables, sparklines, and charts
-- **[vizlib](vizlib.md)** — Programmatic chart primitives (used by csvcat/datcat)
+- **[datcat](datcat.md)** — Structured data (JSON/JSONL/CSV/TSV) tables, sparklines, and charts
+- **[vizlib](vizlib.md)** — Programmatic chart primitives (used by datcat)
 
 ## Composition
 

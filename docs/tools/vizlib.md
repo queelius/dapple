@@ -5,8 +5,7 @@ functions that produce dapple `Canvas` objects, which can then be rendered
 with any dapple renderer.
 
 vizlib is a **Python library**, not a CLI tool. It is used internally by
-csvcat and datcat for their chart modes, and can be used directly for custom
-visualizations.
+datcat for its chart modes, and can be used directly for custom visualizations.
 
 ## Installation
 

@@ -1,8 +1,9 @@
-# datcat -- JSON/JSONL Viewer
+# datcat -- Structured Data Viewer
 
-View JSON and JSONL data in the terminal with tree, table, and syntax-colored
-display modes. Includes dot-path querying and chart visualization for numeric
-fields.
+View structured data (JSON, JSONL, CSV, TSV) in the terminal with tree, table,
+and syntax-colored display modes. Includes dot-path querying and chart
+visualization for numeric fields. datcat is the unified data viewer -- it
+handles all tabular and hierarchical data formats in one tool.
 
 ## Installation
 
@@ -24,9 +25,18 @@ datcat config.json
 # View a JSONL file (one JSON object per line)
 datcat events.jsonl
 
+# View a CSV file (formatted table)
+datcat data.csv
+
+# View a TSV file (auto-detected)
+datcat data.tsv
+
 # Read from stdin
 curl -s https://api.example.com/data | datcat
 ```
+
+datcat auto-detects the format from the file extension (`.json`, `.jsonl`,
+`.csv`, `.tsv`) or by inspecting the content when reading from stdin.
 
 ### Display Modes
 
@@ -142,6 +152,52 @@ datcat metrics.jsonl --plot value --color "#ff6600"
 datcat metrics.jsonl --spark value -o chart.txt
 ```
 
+## CSV / TSV Mode
+
+When given a `.csv` or `.tsv` file, datcat displays a formatted table and
+supports the same chart modes as JSON/JSONL data.
+
+### Table Display
+
+```bash
+# Formatted table (default for CSV)
+datcat data.csv
+
+# Select columns
+datcat data.csv --cols name,score,department
+
+# Sort by column
+datcat data.csv --sort score
+datcat data.csv --sort score --desc
+
+# Limit rows
+datcat data.csv --head 10
+datcat data.csv --tail 5
+```
+
+### Delimiter Control
+
+```bash
+# Explicit delimiter
+datcat -d ";" data.csv
+datcat -d $'\t' data.tsv
+
+# First row is data, not headers
+datcat --no-header data.csv
+```
+
+### CSV Charts
+
+All chart modes work with CSV columns:
+
+```bash
+datcat data.csv --spark revenue           # sparkline of a column
+datcat data.csv --plot revenue            # line plot
+datcat data.csv --bar department          # bar chart of categories
+datcat data.csv --histogram age           # histogram
+datcat data.csv --heatmap "q1,q2,q3"     # heatmap of multiple columns
+```
+
 ## Examples
 
 ### API Response Inspection
@@ -220,31 +276,41 @@ datcat = dapple.extras.datcat.cli:main
 
 ```
 usage: datcat [-h] [--table] [--tree] [--json] [--no-color] [--cycle-color]
-               [--head N] [--tail N]
-               [--plot PATH | --spark PATH | --bar PATH | --histogram PATH]
+               [--head N] [--tail N] [--cols COLS] [--sort COL] [--desc]
+               [-d DELIM] [--no-header]
+               [--plot PATH | --spark PATH | --bar PATH | --histogram PATH
+                | --heatmap COLS]
                [-r RENDERER] [-w WIDTH] [-H HEIGHT] [-o FILE] [--color COLOR]
                [file] [query]
 
-Terminal JSON/JSONL viewer with visualization modes
+Terminal structured data viewer (JSON/JSONL/CSV/TSV) with visualization modes
 
 positional arguments:
-  file                  JSON/JSONL file to display (reads stdin if omitted)
+  file                  Data file to display (reads stdin if omitted)
   query                 Dot-path query (e.g. .database.host)
 
 display options:
-  --table               Flatten JSONL records to a table
-  --tree                Show tree view with box-drawing characters (default)
+  --table               Flatten records to a table
+  --tree                Show tree view with box-drawing characters (default for JSON)
   --json                Show syntax-colored JSON
   --no-color            Disable syntax coloring
   --cycle-color         Color each column with a rotating palette (table mode)
-  --head N              Show first N records (JSONL)
-  --tail N              Show last N records (JSONL)
+  --head N              Show first N records
+  --tail N              Show last N records
+
+csv options:
+  --cols COLS           Select columns (comma-separated)
+  --sort COL            Sort by column
+  --desc                Sort descending (with --sort)
+  -d, --delimiter       CSV delimiter (default: auto-detect)
+  --no-header           First row is data, not headers
 
 plot modes (mutually exclusive):
-  --plot PATH           Line plot of a numeric field (dot-path)
-  --spark PATH          Sparkline of a numeric field (dot-path)
-  --bar PATH            Bar chart of category counts (dot-path)
-  --histogram PATH      Histogram of a numeric field (dot-path)
+  --plot PATH           Line plot of a numeric field
+  --spark PATH          Sparkline of a numeric field
+  --bar PATH            Bar chart of category counts
+  --histogram PATH      Histogram of a numeric field
+  --heatmap COLS        Heatmap of multiple numeric columns (comma-separated)
 
 plot options:
   -r, --renderer        Renderer (default: braille)

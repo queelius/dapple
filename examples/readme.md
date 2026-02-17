@@ -15,11 +15,11 @@ imgcat examples/lena.png
 vidcat examples/bunny.mp4
 
 # CSV / TSV
-csvcat examples/sample.csv
-csvcat examples/weather.csv --bar temp_c
-csvcat examples/weather.csv --spark rainfall_mm
-csvcat examples/stocks.csv --plot AAPL,MSFT,GOOGL
-csvcat examples/sales.tsv
+datcat examples/sample.csv
+datcat examples/weather.csv --bar temp_c
+datcat examples/weather.csv --spark rainfall_mm
+datcat examples/stocks.csv --plot AAPL
+datcat examples/sales.tsv
 
 # JSON / JSONL
 datcat examples/config.json

@@ -99,6 +99,8 @@ Best renderer: **sextants** (video frames are photographic content).
 
 ```bash
 vidcat animation.gif -r sextants        # best for video frames
+vidcat video.mp4 --play                # in-place playback animation
+vidcat video.mp4 --play --fps 15       # control playback speed
 vidcat video.mp4 --frames 1-10         # specific frame range
 vidcat video.mp4 --every 1s            # 1 frame per second
 vidcat video.mp4 --asciinema out.cast  # export to asciinema

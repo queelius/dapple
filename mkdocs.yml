@@ -54,8 +54,8 @@ nav:
     - pdfcat: tools/pdfcat.md
     - mdcat: tools/mdcat.md
     - funcat: tools/funcat.md
-    - csvcat: tools/csvcat.md
     - datcat: tools/datcat.md
+    - htmlcat: tools/htmlcat.md
     - vizlib: tools/vizlib.md
     - compcat: tools/compcat.md
     - ansicat: tools/ansicat.md
