@@ -32,13 +32,12 @@ pip install dapple[vidcat]          # video frame viewer
 pip install dapple[csvcat]          # CSV/TSV viewer & plotter
 pip install dapple[datcat]          # JSON/JSONL viewer & plotter
 pip install dapple[compcat]         # renderer comparison
-pip install dapple[thumbcat]        # image contact sheet
 pip install dapple[ansicat]         # ANSI art viewer
 pip install dapple[plotcat]         # faceted data plots
 pip install dapple[dashcat]         # YAML-driven dashboard (adds pyyaml)
 
 # Bundles
-pip install dapple[all-tools]       # all 12 CLI tools
+pip install dapple[all-tools]       # all 11 CLI tools
 pip install dapple[adapters]        # PIL + matplotlib adapters
 pip install dapple[dev]             # development (tests + all deps)
 ```
@@ -370,7 +369,7 @@ funcat -p "t*cos(t),t*sin(t)"      # parametric spiral
 
 ```bash
 compcat photo.jpg braille sextants quadrants  # compare renderers side-by-side
-thumbcat photos/*.jpg --cols 4 -w 120         # image contact sheet
+imgcat photos/*.jpg --cols 4 -w 120           # image contact sheet
 ```
 
 ### Analysis

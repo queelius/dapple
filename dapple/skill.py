@@ -22,14 +22,13 @@ def _can_import(*modules: str) -> bool:
 
 # Each extra mapped to (required_modules, description for detection output)
 _EXTRAS: dict[str, tuple[tuple[str, ...], str]] = {
-    "imgcat": (("PIL",), "Image viewer"),
+    "imgcat": (("PIL",), "Image viewer & contact sheet"),
     "pdfcat": (("PIL", "pypdfium2"), "PDF viewer"),
     "mdcat": (("PIL", "rich"), "Markdown viewer"),
     "vidcat": (("PIL",), "Video frame viewer"),
     "datcat": ((), "Structured data viewer (JSON/JSONL/CSV/TSV) & plotter"),
     "funcat": ((), "Math expression plotter"),
     "compcat": (("PIL",), "Renderer comparison"),
-    "thumbcat": (("PIL",), "Image contact sheet"),
     "ansicat": ((), "ANSI art viewer"),
     "plotcat": ((), "Faceted data plots"),
     "dashcat": (("yaml",), "YAML-driven dashboard"),
@@ -49,8 +48,9 @@ def detect_extras() -> dict[str, bool]:
 
 _TOOL_SECTIONS: dict[str, str] = {
     "imgcat": """\
-### imgcat — Image Viewer
+### imgcat — Image Viewer & Contact Sheet
 Display image files (PNG, JPEG, GIF, BMP, TIFF, WebP, etc.) in the terminal.
+Multiple images are automatically shown as a grid/contact sheet.
 Best renderer: **sextants** (fills cells with color — photos/graphics look solid).
 
 ```bash
@@ -58,7 +58,9 @@ imgcat photo.jpg -r sextants -w 80      # best for photos
 imgcat chart.png -r sextants -w 100     # diagrams, screenshots
 imgcat line-art.png -r braille -w 80    # line art, sketches
 imgcat --contrast --dither dark.png     # enhance first
-imgcat *.png -r sextants -w 60          # multiple images
+imgcat *.png -r sextants -w 60          # multiple images as grid
+imgcat photos/*.jpg --cols 4 -w 120     # 4-column contact sheet
+imgcat *.png --cols 3 --no-titles       # grid without filenames
 ```
 """,
     "pdfcat": """\
@@ -170,17 +172,6 @@ compcat photo.jpg braille sextants quadrants    # compare renderers
 compcat photo.jpg braille sextants -w 80        # control width
 ```
 """,
-    "thumbcat": """\
-### thumbcat — Image Contact Sheet
-Display multiple images as a thumbnail grid in the terminal.
-Best renderer: **sextants** (photographic thumbnails).
-
-```bash
-thumbcat photos/*.jpg --cols 4 -w 120      # 4-column grid
-thumbcat *.png --cols 3 --no-titles         # no filenames
-thumbcat -r sextants -w 80 img1.png img2.png
-```
-""",
     "ansicat": """\
 ### ansicat — ANSI Art Viewer
 View ANSI art (.ans) files in the terminal, re-rendered through
@@ -285,7 +276,7 @@ description: >-
   data charts. Covers: images, PDFs, markdown, video, structured data (JSON,
   JSONL, CSV, TSV), math/parametric plots (funcat), ANSI art, contact sheets,
   dashboards, renderer comparisons, or faceted data plots. Tools: imgcat,
-  pdfcat, mdcat, vidcat, datcat, funcat, compcat, thumbcat, ansicat,
+  pdfcat, mdcat, vidcat, datcat, funcat, compcat, ansicat,
   plotcat, dashcat. Output is terminal text meant for the user to read.
 ---
 

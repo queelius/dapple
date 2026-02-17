@@ -43,7 +43,7 @@ funcat -p "cos(t),sin(t)"          # parametric curve
 csvcat data.csv --plot line         # chart CSV
 datcat data.jsonl --spark          # sparkline JSONL
 compcat img.jpg braille sextants    # compare renderers
-thumbcat photos/*.jpg --cols 4      # contact sheet
+imgcat photos/*.jpg --cols 4        # contact sheet
 plotcat data.csv --facet region      # faceted plots
 dashcat layout.yaml                 # YAML dashboard
 ```

@@ -58,7 +58,6 @@ nav:
     - datcat: tools/datcat.md
     - vizlib: tools/vizlib.md
     - compcat: tools/compcat.md
-    - thumbcat: tools/thumbcat.md
     - ansicat: tools/ansicat.md
     - plotcat: tools/plotcat.md
     - dashcat: tools/dashcat.md

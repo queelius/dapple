@@ -151,7 +151,7 @@ The `-j` flag turns every tool into an API endpoint. The protocol is JSON-over-s
 
 ## Shared Foundations
 
-All dapple CLI tools -- imgcat, vidcat, pdfcat, mdcat, funcat, and the seven composition/analysis extras added in 0.6 (compcat, thumbcat, ansicat, diffcat, storycat, plotcat, dashcat) -- share common infrastructure:
+All dapple CLI tools -- imgcat, vidcat, pdfcat, mdcat, funcat, and the composition/analysis extras added in 0.6 (compcat, ansicat, plotcat, dashcat) -- share common infrastructure:
 
 - **dapple renderers.** The same seven renderers are available everywhere. `-r braille`, `-r quadrants`, `-r sixel` work identically across tools.
 

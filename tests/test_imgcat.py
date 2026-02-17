@@ -5,6 +5,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 # Skip all tests if extras not importable
@@ -358,3 +359,153 @@ class TestImgcatCLI:
             assert result.returncode == 0
             assert out_path.exists()
             assert len(out_path.read_text()) > 0
+
+
+# ─── Grid mode tests ────────────────────────────────────────────────────────
+
+
+class TestGrid:
+    """Tests for imgcat grid / contact sheet mode."""
+
+    def _make_temp_images(self, tmpdir, count=3, size=(30, 30)):
+        """Create temporary image files and return their paths."""
+        from PIL import Image
+
+        paths = []
+        for i in range(count):
+            img = Image.fromarray(
+                np.random.randint(0, 255, (*size, 3), dtype=np.uint8)
+            )
+            p = Path(tmpdir) / f"img_{i}.png"
+            img.save(p)
+            paths.append(p)
+        return paths
+
+    def test_multiple_images_grid(self):
+        """Passing a list of 4 images renders a 2x2 grid."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=4)
+            buf = StringIO()
+            imgcat(paths, renderer="sextants", width=60, grid_cols=2, dest=buf)
+            output = buf.getvalue()
+            assert len(output) > 0
+            # Grid should show filenames by default
+            assert paths[0].name in output
+
+    def test_single_image_no_grid(self):
+        """A single image path still renders normally (no grid)."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=1)
+            buf = StringIO()
+            imgcat(paths[0], renderer="braille", width=20, dest=buf)
+            output = buf.getvalue()
+            assert len(output) > 0
+            # Single-image path should NOT show filename title
+            assert paths[0].name not in output
+
+    def test_no_titles(self):
+        """titles=False suppresses filenames in grid mode."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=2)
+            buf = StringIO()
+            imgcat(paths, renderer="sextants", width=60, titles=False, dest=buf)
+            output = buf.getvalue()
+            assert len(output) > 0
+            # No filenames should appear
+            for p in paths:
+                assert p.name not in output
+
+    def test_grid_with_titles(self):
+        """titles=True (default) shows filenames in grid mode."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=2)
+            buf = StringIO()
+            imgcat(paths, renderer="sextants", width=60, titles=True, dest=buf)
+            output = buf.getvalue()
+            assert paths[0].name in output
+            assert paths[1].name in output
+
+    def test_single_item_list_no_grid(self):
+        """A list with one image renders that image directly (no grid)."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=1)
+            buf = StringIO()
+            imgcat(paths, renderer="braille", width=20, dest=buf)
+            output = buf.getvalue()
+            assert len(output) > 0
+
+    def test_grid_missing_file_skipped(self):
+        """Missing files in a grid are skipped with warnings, not fatal."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = self._make_temp_images(tmpdir, count=2)
+            paths.insert(1, Path(tmpdir) / "nonexistent.png")
+            buf = StringIO()
+            # Should not raise; missing file is skipped
+            imgcat(paths, renderer="sextants", width=60, dest=buf)
+            output = buf.getvalue()
+            assert len(output) > 0
+
+
+class TestGridCLI:
+    """Tests for grid-mode CLI flags."""
+
+    def test_cli_cols_flag(self):
+        """--cols flag works with multiple images."""
+        import subprocess
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name in ["a.png", "b.png", "c.png", "d.png"]:
+                img = Image.new("RGB", (20, 20), color="blue")
+                img.save(Path(tmpdir) / name)
+
+            result = subprocess.run(
+                [
+                    "python", "-m", "dapple.extras.imgcat.imgcat",
+                    "-r", "sextants", "-w", "60", "--cols", "2",
+                    str(Path(tmpdir) / "a.png"),
+                    str(Path(tmpdir) / "b.png"),
+                    str(Path(tmpdir) / "c.png"),
+                    str(Path(tmpdir) / "d.png"),
+                ],
+                capture_output=True, text=True,
+            )
+            assert result.returncode == 0
+            assert len(result.stdout) > 0
+
+    def test_cli_no_titles_flag(self):
+        """--no-titles flag suppresses filenames in grid output."""
+        import subprocess
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name in ["a.png", "b.png"]:
+                img = Image.new("RGB", (20, 20), color="red")
+                img.save(Path(tmpdir) / name)
+
+            result = subprocess.run(
+                [
+                    "python", "-m", "dapple.extras.imgcat.imgcat",
+                    "-r", "sextants", "-w", "60", "--no-titles",
+                    str(Path(tmpdir) / "a.png"),
+                    str(Path(tmpdir) / "b.png"),
+                ],
+                capture_output=True, text=True,
+            )
+            assert result.returncode == 0
+            assert "a.png" not in result.stdout
+            assert "b.png" not in result.stdout

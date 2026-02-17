@@ -44,7 +44,7 @@ class TestDetectExtras:
         result = detect_extras()
         expected_keys = {
             "imgcat", "pdfcat", "mdcat", "vidcat", "datcat", "funcat",
-            "compcat", "thumbcat", "ansicat", "plotcat", "dashcat",
+            "compcat", "ansicat", "plotcat", "dashcat",
         }
         assert set(result.keys()) == expected_keys
 

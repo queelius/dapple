@@ -40,7 +40,6 @@ All tools that produce graphical output share these flags:
 ## Composition
 
 - **[compcat](compcat.md)** — Compare renderers side by side
-- **[thumbcat](thumbcat.md)** — Image contact sheet / thumbnail grid
 
 ## Analysis
 

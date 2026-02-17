@@ -45,18 +45,15 @@ grid.render(sextants)
 
 The grid handles all the layout math: dividing available width among columns, sizing each cell's canvas proportionally, adding gap spacing between cells.
 
-This is the foundation for the new composition extras -- compcat, thumbcat, diffcat, storycat all use Grid internally. A contact sheet is just "load N images, wrap each in a Frame, arrange in a Grid." A renderer comparison is "render the same image N ways, Grid the results." The primitives compose.
+This is the foundation for the composition extras -- compcat and imgcat's grid mode all use Grid internally. A contact sheet is just "load N images, wrap each in a Frame, arrange in a Grid." A renderer comparison is "render the same image N ways, Grid the results." The primitives compose.
 
-## Seven New Extras
+## Four New Extras
 
 The layout engine enables extras that would have been painful to build before:
 
 | Tool | Purpose |
 |------|---------|
 | **compcat** | Compare renderers side by side |
-| **thumbcat** | Image contact sheet / thumbnail grid |
-| **diffcat** | Visual image diff (side-by-side, overlay, highlight) |
-| **storycat** | Video storyboard grid |
 | **ansicat** | ANSI art viewer |
 | **plotcat** | Faceted data plots grouped by column |
 | **dashcat** | YAML-driven terminal dashboards |
