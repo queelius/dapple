@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dapple"
-version = "0.6.0"
+version = "0.7.0"
 description = "Unified terminal graphics library - render bitmaps to braille, blocks, ASCII, sixel, and kitty"
 readme = "README.md"
 license = "MIT"
