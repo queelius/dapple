@@ -32,6 +32,7 @@ _EXTRAS: dict[str, tuple[tuple[str, ...], str]] = {
     "ansicat": ((), "ANSI art viewer"),
     "plotcat": ((), "Faceted data plots"),
     "dashcat": (("yaml",), "YAML-driven dashboard"),
+    "htmlcat": (("rich", "markdownify"), "HTML viewer"),
 }
 
 
@@ -220,6 +221,21 @@ rows:
       title: Revenue
 ```
 """,
+    "htmlcat": """\
+### htmlcat — HTML Viewer
+Display HTML files in the terminal. Converts HTML to markdown via
+markdownify then renders with Rich formatting and dapple inline images.
+Best for documentation, articles, READMEs — not CSS/JS-heavy pages.
+
+```bash
+htmlcat page.html                          # rich-formatted view
+htmlcat page.html -r sextants              # images via sextants
+htmlcat page.html --no-images              # skip images
+htmlcat page.html --raw                    # show intermediate markdown
+htmlcat page.html -w 80 -o out.txt         # fixed width, save to file
+htmlcat doc1.html doc2.html                # multiple files
+```
+""",
 }
 
 
@@ -274,10 +290,10 @@ description: >-
   Use when the user asks to display, preview, or view files visually in their
   terminal, OR to plot mathematical functions, parametric curves, equations, or
   data charts. Covers: images, PDFs, markdown, video, structured data (JSON,
-  JSONL, CSV, TSV), math/parametric plots (funcat), ANSI art, contact sheets,
-  dashboards, renderer comparisons, or faceted data plots. Tools: imgcat,
-  pdfcat, mdcat, vidcat, datcat, funcat, compcat, ansicat,
-  plotcat, dashcat. Output is terminal text meant for the user to read.
+  JSONL, CSV, TSV), math/parametric plots (funcat), ANSI art, HTML pages,
+  contact sheets, dashboards, renderer comparisons, or faceted data plots.
+  Tools: imgcat, pdfcat, mdcat, vidcat, datcat, funcat, compcat, ansicat,
+  plotcat, dashcat, htmlcat. Output is terminal text meant for the user to read.
 ---
 
 # dapple — Terminal Graphics Toolkit

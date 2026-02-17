@@ -46,8 +46,9 @@ compcat = ["pillow>=9.0"]
 ansicat = []
 plotcat = []
 dashcat = ["pyyaml>=6.0"]
+htmlcat = ["pillow>=9.0", "rich>=13.0", "markdownify>=0.11"]
 # Bundles
-all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,datcat,compcat,ansicat,plotcat,dashcat]"]
+all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,datcat,compcat,ansicat,plotcat,dashcat,htmlcat]"]
 # Development
 dev = [
     "pytest>=7.0",
@@ -77,6 +78,7 @@ compcat = "dapple.extras.compcat.compcat:main"
 ansicat = "dapple.extras.ansicat.ansicat:main"
 plotcat = "dapple.extras.plotcat.plotcat:main"
 dashcat = "dapple.extras.dashcat.dashcat:main"
+htmlcat = "dapple.extras.htmlcat.cli:main"
 dapple-skill = "dapple.skill:main"
 
 [tool.setuptools.packages.find]
