@@ -10,18 +10,14 @@ import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO
+from typing import TextIO
 
 from dapple.extras.richrender import (
-    DappleImageItem,
     DappleMarkdown,
     ImageCache,
     ImageResolver,
     dapple_rendering,
 )
-
-if TYPE_CHECKING:
-    from dapple.renderers import Renderer
 
 
 @dataclass
@@ -46,13 +42,6 @@ class MdcatOptions:
     hyperlinks: bool = True
     grayscale: bool = False
     no_color: bool = False
-
-
-def get_renderer(name: str, options: MdcatOptions) -> Renderer:
-    """Get a renderer by name."""
-    from dapple.extras.common import get_renderer as _get_renderer
-
-    return _get_renderer(name, grayscale=options.grayscale, no_color=options.no_color)
 
 
 def mdcat(
@@ -91,20 +80,9 @@ def mdcat(
 
     content = path.read_text()
 
-    options = MdcatOptions(
-        renderer=renderer,
-        width=width,
-        image_width=image_width,
-        render_images=render_images,
-        theme=theme,
-        code_theme=code_theme,
-        hyperlinks=hyperlinks,
-        grayscale=grayscale,
-        no_color=no_color,
-    )
-
     # Setup renderer
-    rend = get_renderer(renderer, options) if render_images else None
+    from dapple.extras.common import get_renderer
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color) if render_images else None
 
     # Setup console
     term_width = shutil.get_terminal_size().columns

@@ -7,10 +7,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO
-
-if TYPE_CHECKING:
-    pass
+from typing import TextIO
 
 DEFAULT_RENDERERS = ["braille", "sextants", "quadrants", "ascii"]
 
@@ -51,10 +48,7 @@ def compcat(
     canvas = load_image(Path(image_path))
 
     # Build grid row: one Frame per renderer
-    frames = []
-    for name in renderer_names:
-        rend = get_renderer(name, grayscale=grayscale, no_color=no_color)
-        frames.append(Frame(canvas=canvas, title=name))
+    frames = [Frame(canvas=canvas, title=name) for name in renderer_names]
 
     grid = Grid([frames], width=width or terminal_columns())
 

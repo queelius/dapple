@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 
 import numpy as np
 
-from dapple import braille, quadrants, sextants, ascii, sixel, kitty
+from dapple import ascii, braille, kitty, quadrants, sextants, sixel
 from dapple.canvas import Canvas
 from dapple.renderers import Renderer
 
@@ -574,10 +575,9 @@ def main() -> None:
     char_height = args.height or (term.lines - 2)
 
     # Effective no_color: CLI flag or NO_COLOR env var
-    import os
     effective_no_color = args.no_color or "NO_COLOR" in os.environ
 
-    # Get the selected renderer via common.get_renderer (honours NO_COLOR)
+    # Get the selected renderer (common.get_renderer honours NO_COLOR)
     from dapple.extras.common import get_renderer as _get_renderer
     renderer = _get_renderer(
         args.renderer,

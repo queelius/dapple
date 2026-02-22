@@ -65,101 +65,58 @@ class TestPdfcatOptions:
 
 
 class TestGetRenderer:
-    """Tests for get_renderer function."""
+    """Tests for get_renderer — delegates to common.get_renderer."""
 
     def test_auto_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions()
-        renderer = get_renderer("auto", opts)
+        renderer = get_renderer("auto")
         assert hasattr(renderer, "render")
 
     def test_braille_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions()
-        renderer = get_renderer("braille", opts)
+        renderer = get_renderer("braille")
         assert hasattr(renderer, "render")
 
     def test_quadrants_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions()
-        renderer = get_renderer("quadrants", opts)
+        renderer = get_renderer("quadrants")
         assert hasattr(renderer, "render")
         assert renderer.cell_width == 2
         assert renderer.cell_height == 2
 
     def test_sextants_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions()
-        renderer = get_renderer("sextants", opts)
+        renderer = get_renderer("sextants")
         assert hasattr(renderer, "render")
         assert renderer.cell_width == 2
         assert renderer.cell_height == 3
 
-    def test_ascii_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
-
-        opts = PdfcatOptions()
-        renderer = get_renderer("ascii", opts)
-        assert hasattr(renderer, "render")
-
-    def test_sixel_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
-
-        opts = PdfcatOptions()
-        renderer = get_renderer("sixel", opts)
-        assert hasattr(renderer, "render")
-
-    def test_kitty_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
-
-        opts = PdfcatOptions()
-        renderer = get_renderer("kitty", opts)
-        assert hasattr(renderer, "render")
-
-    def test_fingerprint_renderer(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
-
-        opts = PdfcatOptions()
-        renderer = get_renderer("fingerprint", opts)
-        assert hasattr(renderer, "render")
-
     def test_unknown_renderer_raises(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions()
         with pytest.raises(ValueError, match="Unknown renderer"):
-            get_renderer("unknown", opts)
+            get_renderer("unknown")
 
     def test_braille_no_color(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions(no_color=True)
-        renderer = get_renderer("braille", opts)
+        renderer = get_renderer("braille", no_color=True)
         assert renderer.color_mode == "none"
 
     def test_braille_grayscale(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions(grayscale=True)
-        renderer = get_renderer("braille", opts)
+        renderer = get_renderer("braille", grayscale=True)
         assert renderer.color_mode == "grayscale"
 
     def test_quadrants_grayscale(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = PdfcatOptions(grayscale=True)
-        renderer = get_renderer("quadrants", opts)
-        assert renderer.grayscale is True
-
-    def test_sextants_grayscale(self):
-        from dapple.extras.pdfcat.pdfcat import get_renderer, PdfcatOptions
-
-        opts = PdfcatOptions(grayscale=True)
-        renderer = get_renderer("sextants", opts)
+        renderer = get_renderer("quadrants", grayscale=True)
         assert renderer.grayscale is True
 
 

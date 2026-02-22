@@ -39,13 +39,6 @@ class ImgcatOptions:
     no_color: bool = False
 
 
-def get_renderer(name: str, options: ImgcatOptions) -> Renderer:
-    """Get a renderer by name with appropriate configuration."""
-    from dapple.extras.common import get_renderer as _get_renderer
-
-    return _get_renderer(name, grayscale=options.grayscale, no_color=options.no_color)
-
-
 def _imgcat_single(
     image_path: Path,
     *,
@@ -192,7 +185,9 @@ def imgcat(
         no_color=no_color,
     )
 
-    rend = get_renderer(renderer, options)
+    from dapple.extras.common import get_renderer
+
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color)
     output = dest or sys.stdout
 
     # Normalise to list

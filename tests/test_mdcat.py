@@ -266,70 +266,31 @@ class TestMdcatFunction:
 
 
 class TestGetRenderer:
-    """Tests for get_renderer function."""
+    """Tests for get_renderer — delegates to common.get_renderer."""
 
     def test_auto_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = MdcatOptions()
-        renderer = get_renderer("auto", opts)
+        renderer = get_renderer("auto")
         assert hasattr(renderer, "render")
 
     def test_braille_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = MdcatOptions()
-        renderer = get_renderer("braille", opts)
+        renderer = get_renderer("braille")
         assert hasattr(renderer, "render")
 
     def test_quadrants_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = MdcatOptions()
-        renderer = get_renderer("quadrants", opts)
-        assert hasattr(renderer, "render")
-
-    def test_sextants_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
-
-        opts = MdcatOptions()
-        renderer = get_renderer("sextants", opts)
-        assert hasattr(renderer, "render")
-
-    def test_ascii_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
-
-        opts = MdcatOptions()
-        renderer = get_renderer("ascii", opts)
-        assert hasattr(renderer, "render")
-
-    def test_sixel_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
-
-        opts = MdcatOptions()
-        renderer = get_renderer("sixel", opts)
-        assert hasattr(renderer, "render")
-
-    def test_kitty_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
-
-        opts = MdcatOptions()
-        renderer = get_renderer("kitty", opts)
-        assert hasattr(renderer, "render")
-
-    def test_fingerprint_renderer(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
-
-        opts = MdcatOptions()
-        renderer = get_renderer("fingerprint", opts)
+        renderer = get_renderer("quadrants")
         assert hasattr(renderer, "render")
 
     def test_unknown_renderer_raises(self):
-        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = MdcatOptions()
         with pytest.raises(ValueError, match="Unknown renderer"):
-            get_renderer("unknown", opts)
+            get_renderer("unknown")
 
 
 class TestMdcatCLI:

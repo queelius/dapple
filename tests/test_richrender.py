@@ -298,11 +298,11 @@ class TestRichrenderImportCompatibility:
 
         assert MdcatImageResolver is RichrenderImageResolver
 
-    def test_dapple_image_item_same_class(self):
-        from dapple.extras.mdcat.mdcat import DappleImageItem as MdcatItem
-        from dapple.extras.richrender import DappleImageItem as RichrenderItem
+    def test_dapple_image_item_in_richrender(self):
+        from dapple.extras.richrender import DappleImageItem
 
-        assert MdcatItem is RichrenderItem
+        assert DappleImageItem is not None
+        assert hasattr(DappleImageItem, "configure")
 
     def test_dapple_markdown_same_class(self):
         from dapple.extras.mdcat.mdcat import DappleMarkdown as MdcatMd

@@ -162,13 +162,6 @@ def render_pdf_to_images(
     )
 
 
-def get_renderer(name: str, options: PdfcatOptions) -> Renderer:
-    """Get a renderer by name with appropriate configuration."""
-    from dapple.extras.common import get_renderer as _get_renderer
-
-    return _get_renderer(name, grayscale=options.grayscale, no_color=options.no_color)
-
-
 def pdfcat(
     pdf_path: str | Path,
     *,
@@ -228,20 +221,8 @@ def pdfcat(
         print(f"Error: File not found: {path}", file=sys.stderr)
         return False
 
-    options = PdfcatOptions(
-        renderer=renderer,
-        width=width,
-        height=height,
-        pages=pages,
-        dpi=dpi,
-        dither=dither,
-        contrast=contrast,
-        invert=invert,
-        grayscale=grayscale,
-        no_color=no_color,
-    )
-
-    rend = get_renderer(renderer, options)
+    from dapple.extras.common import get_renderer
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color)
     result = render_pdf_to_images(path, dpi=dpi, pages=pages)
 
     if not result.pages:

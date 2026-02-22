@@ -12,7 +12,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO
+from typing import TextIO
 
 from dapple.extras.richrender import (
     DappleMarkdown,
@@ -20,9 +20,6 @@ from dapple.extras.richrender import (
     ImageResolver,
     dapple_rendering,
 )
-
-if TYPE_CHECKING:
-    from dapple.renderers import Renderer
 
 
 @dataclass
@@ -46,18 +43,6 @@ class HtmlcatOptions:
     hyperlinks: bool = True
     grayscale: bool = False
     no_color: bool = False
-
-
-def _get_renderer(
-    name: str,
-    *,
-    grayscale: bool = False,
-    no_color: bool = False,
-) -> Renderer:
-    """Get a renderer by name."""
-    from dapple.extras.common import get_renderer
-
-    return get_renderer(name, grayscale=grayscale, no_color=no_color)
 
 
 def html_to_markdown(html: str) -> str:
@@ -90,6 +75,7 @@ def htmlcat_render(
     grayscale: bool = False,
     no_color: bool = False,
     raw: bool = False,
+    base_path: Path | None = None,
     dest: TextIO | None = None,
 ) -> None:
     """Render an HTML string to the terminal.
@@ -106,6 +92,7 @@ def htmlcat_render(
         code_theme: Pygments theme for code blocks
         hyperlinks: Enable clickable hyperlinks
         raw: If True, output the intermediate markdown instead of rendering
+        base_path: Base path for resolving relative image references.
         dest: Output stream (default: stdout)
     """
     from rich.console import Console
@@ -123,18 +110,14 @@ def htmlcat_render(
         return
 
     # Setup renderer
-    rend = (
-        _get_renderer(renderer, grayscale=grayscale, no_color=no_color)
-        if render_images
-        else None
-    )
+    from dapple.extras.common import get_renderer
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color) if render_images else None
 
     # Setup console
     term_width = shutil.get_terminal_size().columns
     console_width = width or term_width
     img_width = image_width or min(console_width, 80)
 
-    # Create console
     console = Console(
         width=console_width,
         file=output,
@@ -142,11 +125,10 @@ def htmlcat_render(
         no_color=no_color,
     )
 
-    # Setup image resolver (no base_path since we're rendering a string)
+    # Setup image resolver
     cache = ImageCache()
-    resolver = ImageResolver(cache=cache)
+    resolver = ImageResolver(cache=cache, base_path=base_path)
 
-    # Render
     with dapple_rendering(resolver, rend, render_images, img_width, no_color=no_color):
         md = DappleMarkdown(
             markdown_text,
@@ -183,8 +165,6 @@ def htmlcat(
         raw: If True, output the intermediate markdown instead of rendering
         dest: Output stream (default: stdout)
     """
-    from rich.console import Console
-
     path = Path(source)
     if not path.exists():
         print(f"Error: File not found: {path}", file=sys.stderr)
@@ -192,50 +172,20 @@ def htmlcat(
 
     html_content = path.read_text()
 
-    # Convert HTML to markdown
-    markdown_text = html_to_markdown(html_content)
-
-    output = dest if dest is not None else sys.stdout
-
-    # Raw mode: dump the converted markdown
-    if raw:
-        output.write(markdown_text)
-        if markdown_text and not markdown_text.endswith("\n"):
-            output.write("\n")
-        return
-
-    # Setup renderer
-    rend = (
-        _get_renderer(renderer, grayscale=grayscale, no_color=no_color)
-        if render_images
-        else None
-    )
-
-    # Setup console
-    term_width = shutil.get_terminal_size().columns
-    console_width = width or term_width
-    img_width = image_width or min(console_width, 80)
-
-    # Create console
-    console = Console(
-        width=console_width,
-        file=output,
-        force_terminal=dest is None,
+    htmlcat_render(
+        html_content,
+        renderer=renderer,
+        width=width,
+        image_width=image_width,
+        render_images=render_images,
+        code_theme=code_theme,
+        hyperlinks=hyperlinks,
+        grayscale=grayscale,
         no_color=no_color,
+        raw=raw,
+        base_path=path,
+        dest=dest,
     )
-
-    # Setup image resolver with base_path for resolving relative image refs
-    cache = ImageCache()
-    resolver = ImageResolver(cache=cache, base_path=path)
-
-    # Render
-    with dapple_rendering(resolver, rend, render_images, img_width, no_color=no_color):
-        md = DappleMarkdown(
-            markdown_text,
-            code_theme=code_theme,
-            hyperlinks=hyperlinks,
-        )
-        console.print(md)
 
 
 def view(source: str | Path, **kwargs) -> None:

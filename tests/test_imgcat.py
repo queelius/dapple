@@ -31,109 +31,35 @@ class TestImgcatOptions:
 
 
 class TestGetRenderer:
-    """Tests for get_renderer function."""
+    """Tests for get_renderer — delegates to common.get_renderer."""
 
     def test_auto_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = ImgcatOptions()
-        renderer = get_renderer("auto", opts)
+        renderer = get_renderer("auto")
         assert hasattr(renderer, "render")
 
     def test_braille_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = ImgcatOptions()
-        renderer = get_renderer("braille", opts)
+        renderer = get_renderer("braille")
         assert hasattr(renderer, "render")
         assert renderer.cell_width == 2
         assert renderer.cell_height == 4
 
     def test_quadrants_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = ImgcatOptions()
-        renderer = get_renderer("quadrants", opts)
+        renderer = get_renderer("quadrants")
         assert hasattr(renderer, "render")
         assert renderer.cell_width == 2
         assert renderer.cell_height == 2
 
     def test_unknown_renderer_raises(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.common import get_renderer
 
-        opts = ImgcatOptions()
         with pytest.raises(ValueError, match="Unknown renderer"):
-            get_renderer("unknown", opts)
-
-
-class TestGetRendererAll:
-    """Extended tests for get_renderer covering all renderers."""
-
-    def test_sextants_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions()
-        renderer = get_renderer("sextants", opts)
-        assert hasattr(renderer, "render")
-        assert renderer.cell_width == 2
-        assert renderer.cell_height == 3
-
-    def test_ascii_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions()
-        renderer = get_renderer("ascii", opts)
-        assert hasattr(renderer, "render")
-        assert renderer.cell_width == 1
-
-    def test_sixel_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions()
-        renderer = get_renderer("sixel", opts)
-        assert hasattr(renderer, "render")
-
-    def test_kitty_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions()
-        renderer = get_renderer("kitty", opts)
-        assert hasattr(renderer, "render")
-
-    def test_fingerprint_renderer(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions()
-        renderer = get_renderer("fingerprint", opts)
-        assert hasattr(renderer, "render")
-
-    def test_braille_no_color(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions(no_color=True)
-        renderer = get_renderer("braille", opts)
-        assert renderer.color_mode == "none"
-
-    def test_braille_grayscale(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions(grayscale=True)
-        renderer = get_renderer("braille", opts)
-        assert renderer.color_mode == "grayscale"
-
-    def test_quadrants_grayscale(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions(grayscale=True)
-        renderer = get_renderer("quadrants", opts)
-        assert renderer.grayscale is True
-
-    def test_sextants_grayscale(self):
-        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
-
-        opts = ImgcatOptions(grayscale=True)
-        renderer = get_renderer("sextants", opts)
-        assert renderer.grayscale is True
+            get_renderer("unknown")
 
 
 class TestImgcatFunction:
