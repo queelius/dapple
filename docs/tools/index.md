@@ -22,6 +22,15 @@ All tools that produce graphical output share these flags:
 | `--no-color` | Disable color output |
 | `-o` / `--output` | Write to file instead of stdout |
 
+### `NO_COLOR` Environment Variable
+
+All tools honour the [`NO_COLOR`](https://no-color.org/) convention. When the `NO_COLOR` environment variable is set (even to an empty string), colour output is suppressed automatically — equivalent to passing `--no-color`.
+
+```bash
+NO_COLOR=1 imgcat photo.jpg      # colorless output
+NO_COLOR= funcat "sin(x)"        # empty string also works
+```
+
 ## Viewers
 
 - **[imgcat](imgcat.md)** — Display images (JPEG, PNG, WebP, etc.) with grid/contact sheet mode

@@ -24,7 +24,7 @@ Example:
 
 from __future__ import annotations
 
-__version__ = "0.5.3"
+__version__ = "0.7.1"
 
 # Core class
 from dapple.canvas import Canvas

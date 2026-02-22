@@ -394,7 +394,7 @@ funcat -p "cos(t),sin(t)" --color yellow --json \
       --xmin -1.5 --xmax 1.5 --ymin -1.5 --ymax 1.5
 ```
 
-All tools support `-r` / `--renderer` to select the output format and common preprocessing flags (`--dither`, `--contrast`, `--invert`).
+All tools support `-r` / `--renderer` to select the output format, common preprocessing flags (`--dither`, `--contrast`, `--invert`), and color control (`--grayscale`, `--no-color`). The `NO_COLOR` environment variable is also honoured across all tools per the [no-color.org](https://no-color.org/) convention.
 
 ## Auto-Detection
 
