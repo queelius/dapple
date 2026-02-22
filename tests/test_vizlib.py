@@ -7,7 +7,10 @@ from dapple.canvas import Canvas
 
 from dapple.extras.vizlib.charts import bar_chart, heatmap, histogram, line_plot, sparkline
 from dapple.extras.vizlib.colors import COLOR_PALETTE, NAMED_COLORS, parse_color
-from dapple.extras.vizlib.render import RENDERERS, get_renderer, get_terminal_size, pixel_dimensions
+from dapple.extras.vizlib.render import get_renderer, get_terminal_size, pixel_dimensions
+
+# Renderer names supported by vizlib.get_renderer (delegates to common.get_renderer)
+_RENDERER_NAMES = ["braille", "quadrants", "sextants", "ascii", "sixel", "kitty"]
 
 
 # ── Color tests ──────────────────────────────────────────────────────
@@ -56,7 +59,7 @@ class TestRender:
             get_renderer("nonexistent")
 
     def test_all_renderers_accessible(self):
-        for name in RENDERERS:
+        for name in _RENDERER_NAMES:
             r = get_renderer(name)
             assert r.cell_width > 0
             assert r.cell_height > 0

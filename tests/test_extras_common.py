@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import argparse
+import os
+
 import numpy as np
 import pytest
 
-from dapple.extras.common import apply_preprocessing, get_renderer
+from dapple.extras.common import add_color_args, apply_preprocessing, get_renderer
 from dapple.renderers import Renderer
 
 
@@ -91,6 +94,91 @@ class TestGetRenderer:
         """'auto' returns a valid Renderer."""
         renderer = get_renderer("auto")
         assert isinstance(renderer, Renderer)
+
+
+# ─── NO_COLOR env var ─────────────────────────────────────────────────────────
+
+
+class TestNoColorEnv:
+    """Tests for NO_COLOR environment variable support."""
+
+    def test_no_color_env_forces_braille_no_color(self, monkeypatch):
+        """NO_COLOR=1 forces braille to color_mode='none'."""
+        monkeypatch.setenv("NO_COLOR", "1")
+        renderer = get_renderer("braille")
+        assert renderer.color_mode == "none"
+
+    def test_no_color_env_empty_string(self, monkeypatch):
+        """NO_COLOR="" (empty string) also forces no-color per spec."""
+        monkeypatch.setenv("NO_COLOR", "")
+        renderer = get_renderer("braille")
+        assert renderer.color_mode == "none"
+
+    def test_no_color_env_forces_quadrants_grayscale(self, monkeypatch):
+        """NO_COLOR=1 forces quadrants to grayscale."""
+        monkeypatch.setenv("NO_COLOR", "1")
+        renderer = get_renderer("quadrants")
+        assert renderer.grayscale is True
+
+    def test_no_color_env_forces_sextants_grayscale(self, monkeypatch):
+        """NO_COLOR=1 forces sextants to grayscale."""
+        monkeypatch.setenv("NO_COLOR", "1")
+        renderer = get_renderer("sextants")
+        assert renderer.grayscale is True
+
+    def test_no_color_env_absent_keeps_color(self, monkeypatch):
+        """Without NO_COLOR, braille defaults to truecolor."""
+        monkeypatch.delenv("NO_COLOR", raising=False)
+        renderer = get_renderer("braille")
+        assert renderer.color_mode == "truecolor"
+
+    def test_no_color_env_ascii_unchanged(self, monkeypatch):
+        """ascii is already colorless — NO_COLOR is a no-op."""
+        monkeypatch.setenv("NO_COLOR", "1")
+        renderer = get_renderer("ascii")
+        assert isinstance(renderer, Renderer)
+
+
+# ─── add_color_args ───────────────────────────────────────────────────────────
+
+
+class TestAddColorArgs:
+    """Tests for the shared add_color_args() helper."""
+
+    def test_adds_grayscale_flag(self):
+        """add_color_args adds --grayscale flag."""
+        parser = argparse.ArgumentParser()
+        add_color_args(parser)
+        args = parser.parse_args([])
+        assert args.grayscale is False
+        args = parser.parse_args(["--grayscale"])
+        assert args.grayscale is True
+
+    def test_adds_no_color_flag(self):
+        """add_color_args adds --no-color flag."""
+        parser = argparse.ArgumentParser()
+        add_color_args(parser)
+        args = parser.parse_args([])
+        assert args.no_color is False
+        args = parser.parse_args(["--no-color"])
+        assert args.no_color is True
+
+    def test_both_flags_together(self):
+        """Both --grayscale and --no-color can be set simultaneously."""
+        parser = argparse.ArgumentParser()
+        add_color_args(parser)
+        args = parser.parse_args(["--grayscale", "--no-color"])
+        assert args.grayscale is True
+        assert args.no_color is True
+
+    def test_does_not_conflict_with_existing_args(self):
+        """add_color_args works alongside existing parser args."""
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-r", "--renderer", default="braille")
+        add_color_args(parser)
+        args = parser.parse_args(["-r", "sextants", "--no-color"])
+        assert args.renderer == "sextants"
+        assert args.no_color is True
 
 
 # ─── apply_preprocessing ─────────────────────────────────────────────────────

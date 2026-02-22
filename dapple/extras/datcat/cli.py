@@ -63,6 +63,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Disable syntax coloring",
     )
     display_group.add_argument(
+        "--grayscale",
+        action="store_true",
+        help="Force grayscale chart output",
+    )
+    display_group.add_argument(
         "--cycle-color",
         action="store_true",
         help="Color each column with a rotating palette instead of type-based coloring (table mode)",
@@ -405,7 +410,11 @@ def _run_plot_mode(data, fmt: str, args: argparse.Namespace, dest: TextIO) -> No
     if args.color:
         color = parse_color(args.color)
 
-    renderer = get_renderer(args.renderer)
+    renderer = get_renderer(
+        args.renderer,
+        grayscale=args.grayscale,
+        no_color=args.no_color,
+    )
     term_cols, term_lines = get_terminal_size()
     char_w = args.width or min(term_cols // 2, 60)
     char_h = args.height or min(10, max(6, term_lines // 5))

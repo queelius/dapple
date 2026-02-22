@@ -72,8 +72,9 @@ def detect_sixel() -> bool:
 
 def detect_color_support() -> bool:
     """Detect if the terminal supports color output."""
-    # Check for NO_COLOR convention
-    if os.environ.get("NO_COLOR"):
+    # Check for NO_COLOR convention (https://no-color.org/)
+    # Use `in` check: even NO_COLOR="" should disable colour
+    if "NO_COLOR" in os.environ:
         return False
 
     term = os.environ.get("TERM", "")

@@ -44,13 +44,15 @@ class MdcatOptions:
     theme: str = "default"
     code_theme: str = "monokai"
     hyperlinks: bool = True
+    grayscale: bool = False
+    no_color: bool = False
 
 
 def get_renderer(name: str, options: MdcatOptions) -> Renderer:
     """Get a renderer by name."""
     from dapple.extras.common import get_renderer as _get_renderer
 
-    return _get_renderer(name)
+    return _get_renderer(name, grayscale=options.grayscale, no_color=options.no_color)
 
 
 def mdcat(
@@ -63,6 +65,8 @@ def mdcat(
     theme: str = "default",
     code_theme: str = "monokai",
     hyperlinks: bool = True,
+    grayscale: bool = False,
+    no_color: bool = False,
     dest: TextIO | None = None,
 ) -> None:
     """Render a markdown file to the terminal.
@@ -95,6 +99,8 @@ def mdcat(
         theme=theme,
         code_theme=code_theme,
         hyperlinks=hyperlinks,
+        grayscale=grayscale,
+        no_color=no_color,
     )
 
     # Setup renderer
@@ -112,6 +118,7 @@ def mdcat(
         width=console_width,
         file=output,
         force_terminal=dest is None,
+        no_color=no_color,
     )
 
     # Setup image resolver
@@ -119,7 +126,7 @@ def mdcat(
     resolver = ImageResolver(cache=cache, base_path=path)
 
     # Render
-    with dapple_rendering(resolver, rend, render_images, img_width):
+    with dapple_rendering(resolver, rend, render_images, img_width, no_color=no_color):
         md = DappleMarkdown(
             content,
             code_theme=code_theme,
@@ -175,6 +182,9 @@ def main() -> None:
         help="Output file (default: stdout)"
     )
 
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     args = parser.parse_args()
 
     if not args.files:
@@ -215,6 +225,8 @@ def main() -> None:
                     render_images=not args.no_images,
                     code_theme=args.code_theme,
                     hyperlinks=not args.no_hyperlinks,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
                     dest=dest,
                 )
             except Exception as e:

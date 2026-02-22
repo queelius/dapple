@@ -102,6 +102,7 @@ class DappleImageItem(ImageItem):
     _renderer: Renderer | None = None
     _render_images: bool = True
     _image_width: int = 80
+    _no_color: bool = False
 
     @classmethod
     def configure(
@@ -110,11 +111,13 @@ class DappleImageItem(ImageItem):
         renderer: Renderer | None,
         render_images: bool = True,
         image_width: int = 80,
+        no_color: bool = False,
     ) -> None:
         cls._resolver = resolver
         cls._renderer = renderer
         cls._render_images = render_images
         cls._image_width = image_width
+        cls._no_color = no_color
 
     @classmethod
     def reset(cls) -> None:
@@ -122,6 +125,7 @@ class DappleImageItem(ImageItem):
         cls._renderer = None
         cls._render_images = True
         cls._image_width = 80
+        cls._no_color = False
 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
@@ -155,9 +159,10 @@ class DappleImageItem(ImageItem):
             from dapple.layout import terminal_fit
             canvas, _ = terminal_fit(canvas, self._renderer, width=self._image_width)
 
-            # Render to string
+            # Render to string (strip colors when no_color is active)
             buf = StringIO()
-            self._renderer.render(canvas._bitmap, canvas._colors, dest=buf)
+            colors = None if self._no_color else canvas._colors
+            self._renderer.render(canvas._bitmap, colors, dest=buf)
             output = buf.getvalue()
 
             # Yield as text
@@ -196,10 +201,13 @@ def dapple_rendering(
     renderer: Renderer | None,
     render_images: bool = True,
     image_width: int = 80,
+    no_color: bool = False,
 ):
     """Context manager for DappleImageItem configuration."""
     try:
-        DappleImageItem.configure(resolver, renderer, render_images, image_width)
+        DappleImageItem.configure(
+            resolver, renderer, render_images, image_width, no_color=no_color,
+        )
         yield
     finally:
         DappleImageItem.reset()

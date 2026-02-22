@@ -18,7 +18,7 @@ from dapple import braille, quadrants, sextants, ascii, sixel, kitty
 from dapple.canvas import Canvas
 from dapple.renderers import Renderer
 
-# Available renderers mapping
+# Available renderers mapping (used by tests + --renderer choices)
 RENDERERS: dict[str, Renderer] = {
     'braille': braille,
     'quadrants': quadrants,
@@ -478,13 +478,19 @@ def render_all(
     return bitmap, colors, x_min, x_max, y_min, y_max, legend_entries
 
 
-def print_legend(entries: list[tuple[str, tuple[float, float, float]]]) -> None:
+def print_legend(
+    entries: list[tuple[str, tuple[float, float, float]]],
+    no_color: bool = False,
+) -> None:
     """Print colored legend line."""
     parts = []
     for expr, color in entries:
-        r, g, b = int(color[0] * 255), int(color[1] * 255), int(color[2] * 255)
-        colored_dash = f"\033[38;2;{r};{g};{b}m──\033[0m"
-        parts.append(f"{colored_dash} {expr}")
+        if no_color:
+            parts.append(f"-- {expr}")
+        else:
+            r, g, b = int(color[0] * 255), int(color[1] * 255), int(color[2] * 255)
+            colored_dash = f"\033[38;2;{r};{g};{b}m──\033[0m"
+            parts.append(f"{colored_dash} {expr}")
     print("  ".join(parts))
 
 
@@ -522,6 +528,9 @@ def main() -> None:
         default='braille',
         help='Renderer: braille (default), quadrants, sextants, ascii, sixel, kitty'
     )
+
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
 
     # Use parse_known_args to handle expressions starting with -
     args, remaining = parser.parse_known_args()
@@ -564,8 +573,17 @@ def main() -> None:
     char_width = args.width or term.columns
     char_height = args.height or (term.lines - 2)
 
-    # Get the selected renderer
-    renderer = RENDERERS[args.renderer]
+    # Effective no_color: CLI flag or NO_COLOR env var
+    import os
+    effective_no_color = args.no_color or "NO_COLOR" in os.environ
+
+    # Get the selected renderer via common.get_renderer (honours NO_COLOR)
+    from dapple.extras.common import get_renderer as _get_renderer
+    renderer = _get_renderer(
+        args.renderer,
+        grayscale=args.grayscale,
+        no_color=args.no_color,
+    )
 
     # Convert to pixel dimensions using renderer's cell size
     pixel_width = char_width * renderer.cell_width
@@ -656,22 +674,20 @@ def main() -> None:
             # Print range info
             print(f"x: [{x_min:.2f}, {x_max:.2f}]  y: [{y_min:.2f}, {y_max:.2f}]")
 
-            # Configure renderer with appropriate options
-            if args.renderer == 'braille':
-                configured = renderer(threshold=0.2, color_mode="truecolor")
-            elif args.renderer in ('quadrants', 'sextants'):
-                configured = renderer(true_color=True)
-            else:  # ascii, sixel, kitty - use defaults
-                configured = renderer()
+            # Layer funcat-specific braille threshold for thin curves
+            configured = renderer
+            if args.renderer == 'braille' and hasattr(renderer, 'threshold'):
+                configured = renderer(threshold=0.2)
 
             # Render to terminal
-            canvas = Canvas(bitmap, colors=colors)
+            colors_out = None if effective_no_color else colors
+            canvas = Canvas(bitmap, colors=colors_out)
             canvas.out(configured)
             print()
 
             # Print legend if requested and multiple functions
             if args.legend and len(legend_entries) > 1:
-                print_legend(legend_entries)
+                print_legend(legend_entries, no_color=effective_no_color)
 
     except KeyboardInterrupt:
         sys.exit(130)

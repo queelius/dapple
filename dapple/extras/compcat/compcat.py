@@ -20,6 +20,8 @@ def compcat(
     renderers: list[str] | None = None,
     *,
     width: int | None = None,
+    grayscale: bool = False,
+    no_color: bool = False,
     dest: TextIO | None = None,
 ) -> None:
     """Compare an image across multiple renderers.
@@ -28,6 +30,8 @@ def compcat(
         image_path: Path to the image file.
         renderers: List of renderer names to compare.
         width: Total output width in characters (None = terminal width).
+        grayscale: Force grayscale output.
+        no_color: Disable color output.
         dest: Output stream (default: stdout).
     """
     try:
@@ -49,13 +53,13 @@ def compcat(
     # Build grid row: one Frame per renderer
     frames = []
     for name in renderer_names:
-        rend = get_renderer(name)
+        rend = get_renderer(name, grayscale=grayscale, no_color=no_color)
         frames.append(Frame(canvas=canvas, title=name))
 
     grid = Grid([frames], width=width or terminal_columns())
 
     # Render with sextants (good default for comparison output)
-    display_rend = get_renderer("sextants")
+    display_rend = get_renderer("sextants", grayscale=grayscale, no_color=no_color)
     grid.render(display_rend, dest=output)
 
 
@@ -83,6 +87,9 @@ def main() -> None:
         help="Output file (default: stdout)",
     )
 
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     args = parser.parse_args()
 
     if not args.image.exists():
@@ -91,7 +98,13 @@ def main() -> None:
 
     dest = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
     try:
-        compcat(args.image, args.renderers, width=args.width, dest=dest)
+        compcat(
+            args.image, args.renderers,
+            width=args.width,
+            grayscale=args.grayscale,
+            no_color=args.no_color,
+            dest=dest,
+        )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

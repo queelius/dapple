@@ -4,24 +4,25 @@ from __future__ import annotations
 
 import shutil
 
-from dapple import braille, quadrants, sextants, ascii, sixel, kitty
 from dapple.renderers import Renderer
 
-RENDERERS: dict[str, Renderer] = {
-    "braille": braille,
-    "quadrants": quadrants,
-    "sextants": sextants,
-    "ascii": ascii,
-    "sixel": sixel,
-    "kitty": kitty,
-}
 
-
-def get_renderer(name: str) -> Renderer:
+def get_renderer(
+    name: str,
+    *,
+    grayscale: bool = False,
+    no_color: bool = False,
+) -> Renderer:
     """Get a renderer by name, configured for chart output.
+
+    Delegates to :func:`dapple.extras.common.get_renderer` for colour
+    handling (including ``NO_COLOR`` env var support), then layers
+    chart-specific defaults on top.
 
     Args:
         name: Renderer name (braille, quadrants, sextants, ascii, sixel, kitty).
+        grayscale: Force grayscale output.
+        no_color: Disable colour output entirely.
 
     Returns:
         Configured Renderer instance.
@@ -29,19 +30,16 @@ def get_renderer(name: str) -> Renderer:
     Raises:
         ValueError: If the renderer name is unknown.
     """
-    renderer = RENDERERS.get(name)
-    if renderer is None:
-        valid = ", ".join(sorted(RENDERERS.keys()))
-        raise ValueError(f"Unknown renderer: {name}. Available: {valid}")
+    from dapple.extras.common import get_renderer as _common_get_renderer
 
-    # Renderers are frozen dataclasses with __call__ returning new instances
-    if name == "braille":
-        return braille(threshold=0.2, color_mode="truecolor")
-    elif name == "quadrants":
-        return quadrants(true_color=True)
-    elif name == "sextants":
-        return sextants(true_color=True)
-    return renderer
+    rend = _common_get_renderer(name, grayscale=grayscale, no_color=no_color)
+
+    # Chart-specific overrides: braille needs a lower threshold for
+    # thin chart lines to stay visible.
+    if name == "braille" and hasattr(rend, "threshold"):
+        rend = rend(threshold=0.2)
+
+    return rend
 
 
 def get_terminal_size() -> tuple[int, int]:

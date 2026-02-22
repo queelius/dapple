@@ -127,6 +127,8 @@ def dashcat(
     width: int | None = None,
     renderer: str = "braille",
     height: int = 8,
+    grayscale: bool = False,
+    no_color: bool = False,
     dest: TextIO | None = None,
 ) -> None:
     """Render a dashboard from a YAML layout file.
@@ -158,7 +160,7 @@ def dashcat(
     from dapple.layout import Frame, Grid, terminal_columns
 
     output = dest or sys.stdout
-    rend = get_renderer(renderer)
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color)
     total_width = width or terminal_columns()
 
     # Load layout
@@ -262,6 +264,9 @@ def main() -> None:
         help="Output file",
     )
 
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     args = parser.parse_args()
 
     if not args.layout.exists():
@@ -275,6 +280,8 @@ def main() -> None:
             width=args.width,
             renderer=args.renderer,
             height=args.height,
+            grayscale=args.grayscale,
+            no_color=args.no_color,
             dest=dest,
         )
     except Exception as e:

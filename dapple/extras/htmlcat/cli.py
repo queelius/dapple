@@ -56,6 +56,9 @@ def _build_parser():
         help="Output file (default: stdout)",
     )
 
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     return parser
 
 
@@ -102,6 +105,8 @@ def main() -> None:
                     render_images=not args.no_images,
                     code_theme=args.code_theme,
                     hyperlinks=not args.no_hyperlinks,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
                     raw=args.raw,
                     dest=dest,
                 )

@@ -16,6 +16,8 @@ def ansicat(
     *,
     renderer: str = "sextants",
     width: int | None = None,
+    grayscale: bool = False,
+    no_color: bool = False,
     dest: TextIO | None = None,
 ) -> None:
     """Render an ANSI art file to the terminal.
@@ -24,6 +26,8 @@ def ansicat(
         art_path: Path to the ANSI art file (or "-" for stdin).
         renderer: Renderer name for output.
         width: Output width in characters (None = terminal width).
+        grayscale: Force grayscale output.
+        no_color: Disable color output.
         dest: Output stream (default: stdout).
     """
     from dapple.adapters.ansi import from_ansi
@@ -31,7 +35,7 @@ def ansicat(
     from dapple.layout import terminal_fit
 
     output = dest or sys.stdout
-    rend = get_renderer(renderer)
+    rend = get_renderer(renderer, grayscale=grayscale, no_color=no_color)
 
     # Read the ANSI art text
     path = Path(art_path)
@@ -79,6 +83,9 @@ def main() -> None:
         help="Output file (default: stdout)",
     )
 
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     args = parser.parse_args()
 
     if not args.files:
@@ -96,6 +103,8 @@ def main() -> None:
                     art_path,
                     renderer=args.renderer,
                     width=args.width,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
                     dest=dest,
                 )
             except Exception as e:

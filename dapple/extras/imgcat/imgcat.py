@@ -275,14 +275,10 @@ def main() -> None:
     parser.add_argument(
         "-o", "--output", type=Path, help="Output file (default: stdout)"
     )
-    parser.add_argument(
-        "--grayscale", action="store_true",
-        help="Force grayscale output"
-    )
-    parser.add_argument(
-        "--no-color", action="store_true",
-        help="Disable color output"
-    )
+
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     parser.add_argument(
         "--pager", action="store_true",
         help="Pipe output through a pager (less -R)"

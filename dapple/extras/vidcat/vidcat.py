@@ -622,14 +622,9 @@ def main() -> None:
         "--invert", action="store_true",
         help="Invert colors",
     )
-    parser.add_argument(
-        "--grayscale", action="store_true",
-        help="Force grayscale output",
-    )
-    parser.add_argument(
-        "--no-color", action="store_true",
-        help="Disable color output",
-    )
+    from dapple.extras.common import add_color_args
+    add_color_args(parser)
+
     parser.add_argument(
         "-o", "--output", type=Path,
         help="Output file (default: stdout)",

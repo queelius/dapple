@@ -6,6 +6,7 @@ imgcat, pdfcat, mdcat, and other extras.
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -43,7 +44,15 @@ def get_renderer(
 
     Raises:
         ValueError: If name is not a recognized renderer.
+
+    The ``NO_COLOR`` environment variable (https://no-color.org/) is
+    honoured automatically: when set (even to an empty string), colour
+    output is suppressed for text-art renderers.
     """
+    # Honour the NO_COLOR convention (https://no-color.org/)
+    if "NO_COLOR" in os.environ:
+        no_color = True
+
     from dapple import (
         ascii,
         braille,
@@ -91,9 +100,35 @@ def get_renderer(
                 return quadrants(grayscale=True)
             return sextants(grayscale=True)
 
-    # ascii, fingerprint are inherently colorless;
+    if name == "fingerprint":
+        if no_color:
+            return fingerprint  # plain glyphs; callers also strip colors array
+        if grayscale:
+            return fingerprint(grayscale=True)
+        return fingerprint
+
+    # ascii is inherently colorless;
     # sixel, kitty are pixel protocols where no_color doesn't apply
     return renderer  # type: ignore[return-value]
+
+
+def add_color_args(parser: argparse.ArgumentParser) -> None:
+    """Add ``--grayscale`` and ``--no-color`` flags to an argparse parser.
+
+    This is the single source of truth for colour-control CLI flags.
+    Every dapple extra should call this instead of adding the flags
+    manually, ensuring uniform naming and help text.
+    """
+    parser.add_argument(
+        "--grayscale",
+        action="store_true",
+        help="Force grayscale output",
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable color output",
+    )
 
 
 def apply_preprocessing(

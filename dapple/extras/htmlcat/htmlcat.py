@@ -44,13 +44,20 @@ class HtmlcatOptions:
     render_images: bool = True
     code_theme: str = "monokai"
     hyperlinks: bool = True
+    grayscale: bool = False
+    no_color: bool = False
 
 
-def _get_renderer(name: str) -> Renderer:
+def _get_renderer(
+    name: str,
+    *,
+    grayscale: bool = False,
+    no_color: bool = False,
+) -> Renderer:
     """Get a renderer by name."""
     from dapple.extras.common import get_renderer
 
-    return get_renderer(name)
+    return get_renderer(name, grayscale=grayscale, no_color=no_color)
 
 
 def html_to_markdown(html: str) -> str:
@@ -80,6 +87,8 @@ def htmlcat_render(
     render_images: bool = True,
     code_theme: str = "monokai",
     hyperlinks: bool = True,
+    grayscale: bool = False,
+    no_color: bool = False,
     raw: bool = False,
     dest: TextIO | None = None,
 ) -> None:
@@ -114,7 +123,11 @@ def htmlcat_render(
         return
 
     # Setup renderer
-    rend = _get_renderer(renderer) if render_images else None
+    rend = (
+        _get_renderer(renderer, grayscale=grayscale, no_color=no_color)
+        if render_images
+        else None
+    )
 
     # Setup console
     term_width = shutil.get_terminal_size().columns
@@ -126,6 +139,7 @@ def htmlcat_render(
         width=console_width,
         file=output,
         force_terminal=dest is None,
+        no_color=no_color,
     )
 
     # Setup image resolver (no base_path since we're rendering a string)
@@ -133,7 +147,7 @@ def htmlcat_render(
     resolver = ImageResolver(cache=cache)
 
     # Render
-    with dapple_rendering(resolver, rend, render_images, img_width):
+    with dapple_rendering(resolver, rend, render_images, img_width, no_color=no_color):
         md = DappleMarkdown(
             markdown_text,
             code_theme=code_theme,
@@ -151,6 +165,8 @@ def htmlcat(
     render_images: bool = True,
     code_theme: str = "monokai",
     hyperlinks: bool = True,
+    grayscale: bool = False,
+    no_color: bool = False,
     raw: bool = False,
     dest: TextIO | None = None,
 ) -> None:
@@ -189,7 +205,11 @@ def htmlcat(
         return
 
     # Setup renderer
-    rend = _get_renderer(renderer) if render_images else None
+    rend = (
+        _get_renderer(renderer, grayscale=grayscale, no_color=no_color)
+        if render_images
+        else None
+    )
 
     # Setup console
     term_width = shutil.get_terminal_size().columns
@@ -201,6 +221,7 @@ def htmlcat(
         width=console_width,
         file=output,
         force_terminal=dest is None,
+        no_color=no_color,
     )
 
     # Setup image resolver with base_path for resolving relative image refs
@@ -208,7 +229,7 @@ def htmlcat(
     resolver = ImageResolver(cache=cache, base_path=path)
 
     # Render
-    with dapple_rendering(resolver, rend, render_images, img_width):
+    with dapple_rendering(resolver, rend, render_images, img_width, no_color=no_color):
         md = DappleMarkdown(
             markdown_text,
             code_theme=code_theme,
