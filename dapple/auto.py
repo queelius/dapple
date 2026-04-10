@@ -71,22 +71,35 @@ def detect_sixel() -> bool:
 
 
 def detect_color_support() -> bool:
-    """Detect if the terminal supports color output."""
-    # Check for NO_COLOR convention (https://no-color.org/)
-    # Use `in` check: even NO_COLOR="" should disable colour
+    """Detect if the terminal supports color output.
+
+    Returns ``False`` for the standard no-colour cases — ``NO_COLOR`` in
+    the environment (https://no-color.org/) and ``TERM=dumb`` (the POSIX
+    convention used by CI runners, Emacs shell buffers, and many script
+    harnesses) — and otherwise ``True`` when the environment contains any
+    of the usual markers.
+    """
+    # Check for NO_COLOR convention: even NO_COLOR="" should disable colour.
     if "NO_COLOR" in os.environ:
         return False
 
-    term = os.environ.get("TERM", "")
-    # Common color-capable TERM values
+    term = os.environ.get("TERM", "").lower()
+
+    # POSIX "dumb" terminal - no control sequences, no colour.
+    if term == "dumb":
+        return False
+
+    # Common colour-capable TERM values.
     if any(x in term for x in ("color", "256", "direct", "truecolor", "kitty", "xterm")):
         return True
 
-    # COLORTERM is often set for true color support
+    # COLORTERM is often set for true-colour support.
     if os.environ.get("COLORTERM"):
         return True
 
-    return True  # Default to assuming color support
+    # Default: assume no colour rather than silently emitting escape codes
+    # into terminals that can't render them.
+    return False
 
 
 def detect_protocol() -> Protocol:
@@ -146,8 +159,8 @@ def auto_renderer(
         Renderer instance configured for the terminal.
 
     Example:
-        >>> from dapple import Canvas, auto_renderer
-        >>> canvas = Canvas.from_pil(image)
+        >>> from dapple import from_pil, auto_renderer
+        >>> canvas = from_pil(image)
         >>> canvas.out(auto_renderer())
     """
     from dapple.renderers import ascii, braille, sextants

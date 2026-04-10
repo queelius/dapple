@@ -40,21 +40,26 @@ def _quantize_colors(
 ) -> tuple[NDArray[np.uint8], NDArray[np.floating]]:
     """Quantize RGB colors to a limited palette using simple binning.
 
+    Picks the largest ``levels`` such that ``levels ** 3 <= n_colors`` and
+    ``levels >= 2``, so the emitted palette never exceeds the requested
+    ``n_colors``. Clamped to 6 (the DEC sixel spec's practical ceiling
+    for per-channel resolution from uniform binning).
+
     Args:
         colors: RGB array (H, W, 3) with values 0.0-1.0
-        n_colors: Maximum number of colors in palette
+        n_colors: Maximum number of colors in palette (must be >= 8)
 
     Returns:
         Tuple of (indexed image, palette)
         - indexed: (H, W) array of palette indices
-        - palette: (n_colors, 3) array of RGB values
+        - palette: (levels**3, 3) array of RGB values
     """
     h, w, _ = colors.shape
 
-    # Simple uniform quantization
-    # Compute number of levels per channel
-    levels = int(np.cbrt(n_colors))
-    levels = max(2, min(levels, 6))
+    # Find largest cube-rootable level count that fits under n_colors.
+    levels = 2
+    while (levels + 1) ** 3 <= n_colors and levels < 6:
+        levels += 1
 
     # Quantize each channel
     r = (colors[:, :, 0] * (levels - 0.001)).astype(np.uint8)

@@ -206,6 +206,10 @@ def _resize_2d(
 ) -> NDArray[np.floating]:
     """Resize a 2D array using bilinear interpolation.
 
+    Fully vectorized: computes all output pixels via numpy broadcasting
+    rather than a Python loop. Essential for performance on real images
+    since every canvas.fit() / terminal_fit() call routes through here.
+
     Args:
         bitmap: 2D array of shape (H, W), values 0.0-1.0
         new_height: Target height
@@ -216,36 +220,35 @@ def _resize_2d(
     """
     old_h, old_w = bitmap.shape
 
-    # Create coordinate arrays for new image
-    y_ratio = old_h / new_height
-    x_ratio = old_w / new_width
+    if new_height <= 0 or new_width <= 0:
+        return np.zeros((max(0, new_height), max(0, new_width)), dtype=np.float32)
 
-    y_coords = np.arange(new_height) * y_ratio
-    x_coords = np.arange(new_width) * x_ratio
+    # Sample coordinates in the source image
+    y_coords = np.arange(new_height, dtype=np.float32) * (old_h / new_height)
+    x_coords = np.arange(new_width, dtype=np.float32) * (old_w / new_width)
 
-    # Get integer and fractional parts
-    y0 = np.floor(y_coords).astype(int)
-    x0 = np.floor(x_coords).astype(int)
+    y0 = np.floor(y_coords).astype(np.intp)
+    x0 = np.floor(x_coords).astype(np.intp)
     y1 = np.minimum(y0 + 1, old_h - 1)
     x1 = np.minimum(x0 + 1, old_w - 1)
 
-    y_frac = y_coords - y0
-    x_frac = x_coords - x0
+    y_frac = (y_coords - y0).astype(np.float32)
+    x_frac = (x_coords - x0).astype(np.float32)
 
-    # Bilinear interpolation
-    result = np.zeros((new_height, new_width), dtype=np.float32)
-    for y in range(new_height):
-        for x in range(new_width):
-            top_left = bitmap[y0[y], x0[x]]
-            top_right = bitmap[y0[y], x1[x]]
-            bottom_left = bitmap[y1[y], x0[x]]
-            bottom_right = bitmap[y1[y], x1[x]]
+    # Gather the four corner values for every output pixel in one shot.
+    # Broadcasting: y0[:, None] is (H_new, 1), x0[None, :] is (1, W_new) →
+    # indexed result is (H_new, W_new).
+    tl = bitmap[y0[:, None], x0[None, :]]
+    tr = bitmap[y0[:, None], x1[None, :]]
+    bl = bitmap[y1[:, None], x0[None, :]]
+    br = bitmap[y1[:, None], x1[None, :]]
 
-            top = top_left * (1 - x_frac[x]) + top_right * x_frac[x]
-            bottom = bottom_left * (1 - x_frac[x]) + bottom_right * x_frac[x]
-            result[y, x] = top * (1 - y_frac[y]) + bottom * y_frac[y]
+    wy = y_frac[:, None]
+    wx = x_frac[None, :]
 
-    return result
+    top = tl * (1 - wx) + tr * wx
+    bot = bl * (1 - wx) + br * wx
+    return (top * (1 - wy) + bot * wy).astype(np.float32)
 
 
 def resize(

@@ -109,8 +109,9 @@ def _parse_ansi_color(params: list[int], is_fg: bool) -> tuple[int, int, int] | 
             b = (n % 6) * 51
             return (r, g, b)
         else:
-            # Grayscale: 232-255 -> 0-23 levels
-            gray = (n - 232) * 256 // 24
+            # Grayscale ramp 232-255: xterm spec is 8 + (index * 10)
+            # producing RGB values 8, 18, 28, ..., 238.
+            gray = 8 + (n - 232) * 10
             return (gray, gray, gray)
     return None
 
@@ -474,30 +475,41 @@ def from_ansi(
 class ANSIAdapter:
     """Adapter for parsing ANSI terminal art.
 
+    The text to parse is stored at construction so that ``to_canvas()`` takes
+    no arguments — matching the :class:`Adapter` protocol that every other
+    adapter (PIL, numpy, matplotlib, cairo) implements.
+
     Attributes:
-        format: Force specific format (None for auto-detect)
-        charset: ASCII charset for density mapping
+        text: ANSI-colored terminal art to parse.
+        format: Force specific format (None for auto-detect).
+        charset: ASCII charset for density mapping.
 
     Example:
         >>> from dapple.adapters.ansi import ANSIAdapter
-        >>> adapter = ANSIAdapter(format="braille")
-        >>> canvas = adapter.parse("⠿⠿⠿")
+        >>> adapter = ANSIAdapter("⠿⠿⠿", format="braille")
+        >>> canvas = adapter.to_canvas()
     """
 
+    text: str
     format: Literal["braille", "quadrants", "sextants", "ascii"] | None = None
     charset: str = DEFAULT_CHARSET
 
-    def parse(self, text: str) -> "Canvas":
+    def to_canvas(self) -> "Canvas":
+        """Parse the stored terminal art and return a Canvas."""
+        return from_ansi(self.text, format=self.format, charset=self.charset)
+
+    def parse(self, text: str | None = None) -> "Canvas":
         """Parse terminal art to Canvas.
 
         Args:
-            text: ANSI-colored terminal art
+            text: Override the stored text for a one-off parse. If omitted,
+                uses the text supplied at construction.
 
         Returns:
-            Canvas with bitmap and colors
+            Canvas with bitmap and colors.
         """
-        return from_ansi(text, format=self.format, charset=self.charset)
-
-    def to_canvas(self, text: str) -> "Canvas":
-        """Alias for parse() to match Adapter protocol."""
-        return self.parse(text)
+        return from_ansi(
+            text if text is not None else self.text,
+            format=self.format,
+            charset=self.charset,
+        )

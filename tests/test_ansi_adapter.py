@@ -274,25 +274,25 @@ class TestANSIAdapter:
     """Tests for ANSIAdapter class."""
 
     def test_parse_method(self):
-        """ANSIAdapter.parse works."""
-        adapter = ANSIAdapter()
+        """ANSIAdapter.parse works with explicit override text."""
+        adapter = ANSIAdapter("")
         canvas = adapter.parse("⠿⠿⠿")
         assert canvas.bitmap.shape == (4, 6)
 
-    def test_to_canvas_alias(self):
-        """ANSIAdapter.to_canvas is alias for parse."""
-        adapter = ANSIAdapter()
-        canvas = adapter.to_canvas("⠿⠿⠿")
+    def test_to_canvas_uses_stored_text(self):
+        """ANSIAdapter.to_canvas parses the text supplied at construction."""
+        adapter = ANSIAdapter("⠿⠿⠿")
+        canvas = adapter.to_canvas()
         assert canvas.bitmap.shape == (4, 6)
 
     def test_forced_format(self):
         """ANSIAdapter respects format hint."""
-        adapter = ANSIAdapter(format="braille")
-        canvas = adapter.parse("⠿⠿⠿")
+        adapter = ANSIAdapter("⠿⠿⠿", format="braille")
+        canvas = adapter.to_canvas()
         assert canvas.bitmap.shape == (4, 6)
 
     def test_custom_charset(self):
         """ANSIAdapter uses custom charset for ASCII."""
-        adapter = ANSIAdapter(format="ascii", charset=" X")
-        canvas = adapter.parse("X")
+        adapter = ANSIAdapter("X", format="ascii", charset=" X")
+        canvas = adapter.to_canvas()
         assert canvas.bitmap.mean() > 0.9  # X is bright in this charset

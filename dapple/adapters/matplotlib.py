@@ -72,6 +72,10 @@ class MatplotlibAdapter:
     def to_canvas(self) -> Canvas:
         """Convert to Canvas.
 
+        Does not permanently mutate the caller's figure: if ``width`` or
+        ``height`` forces a size change, the original dimensions are
+        restored on the way out (including on exceptions).
+
         Returns:
             New Canvas object.
         """
@@ -79,24 +83,31 @@ class MatplotlibAdapter:
 
         fig = self._figure
 
-        # Compute size
-        if self._width is not None or self._height is not None:
-            orig_w, orig_h = fig.get_size_inches()
+        # Compute size and remember the original so we can restore it.
+        size_override = self._width is not None or self._height is not None
+        orig_w_inches: float | None = None
+        orig_h_inches: float | None = None
+        if size_override:
+            orig_w_inches, orig_h_inches = (float(v) for v in fig.get_size_inches())
             if self._width is not None and self._height is not None:
                 fig_w = self._width / self._dpi
                 fig_h = self._height / self._dpi
             elif self._width is not None:
                 fig_w = self._width / self._dpi
-                fig_h = orig_h * (fig_w / orig_w)
+                fig_h = orig_h_inches * (fig_w / orig_w_inches)
             else:
                 fig_h = self._height / self._dpi  # type: ignore
-                fig_w = orig_w * (fig_h / orig_h)
+                fig_w = orig_w_inches * (fig_h / orig_h_inches)
             fig.set_size_inches(fig_w, fig_h)
 
-        # Render to buffer
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=self._dpi, bbox_inches="tight", pad_inches=0)
-        buf.seek(0)
+        try:
+            # Render to buffer
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", dpi=self._dpi, bbox_inches="tight", pad_inches=0)
+            buf.seek(0)
+        finally:
+            if size_override and orig_w_inches is not None and orig_h_inches is not None:
+                fig.set_size_inches(orig_w_inches, orig_h_inches)
 
         # Load as numpy array
         try:

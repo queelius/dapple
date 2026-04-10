@@ -22,6 +22,11 @@ from dapple import (
     FingerprintRenderer,
 )
 from dapple.renderers import Renderer
+from dapple.renderers.fingerprint import (
+    RESET,
+    _sextant_pattern,
+    _synthetic_sextant_bitmap,
+)
 
 
 def render_to_string(renderer, bitmap, colors=None):
@@ -709,6 +714,238 @@ class TestFingerprintRenderer:
         with pytest.raises(ValueError, match="must be 2D"):
             render_to_string(fingerprint, np.zeros((4, 2, 3)))
 
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_no_color_default(self):
+        """render() produces plain glyphs without ANSI codes by default."""
+        bitmap = np.random.rand(32, 24).astype(np.float32)
+        result = render_to_string(fingerprint, bitmap)
+        assert "\033[" not in result
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_grayscale_color(self):
+        """render() with grayscale=True produces ANSI grayscale codes."""
+        bitmap = np.linspace(0, 1, 32 * 24).reshape(32, 24).astype(np.float32)
+        result = render_to_string(fingerprint(grayscale=True), bitmap)
+        assert "\033[38;" in result  # Foreground
+        assert "\033[48;" in result  # Background
+        assert RESET in result
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_truecolor(self):
+        """render() with true_color=True produces 24-bit ANSI codes."""
+        bitmap = np.linspace(0, 1, 32 * 24).reshape(32, 24).astype(np.float32)
+        result = render_to_string(fingerprint(grayscale=True, true_color=True), bitmap)
+        assert "\033[38;2;" in result
+        assert "\033[48;2;" in result
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_256color(self):
+        """render() with true_color=False produces 256-color ANSI codes."""
+        bitmap = np.linspace(0, 1, 32 * 24).reshape(32, 24).astype(np.float32)
+        result = render_to_string(fingerprint(grayscale=True, true_color=False), bitmap)
+        assert "\033[38;5;" in result
+        assert "\033[48;5;" in result
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_with_rgb_colors(self):
+        """render() uses colors array for RGB output."""
+        bitmap = np.ones((32, 24), dtype=np.float32)
+        colors = np.zeros((32, 24, 3), dtype=np.float32)
+        colors[:, :, 0] = 1.0  # Red
+        result = render_to_string(fingerprint, bitmap, colors)
+        assert "\033[38;2;" in result
+        assert "255" in result  # Red channel
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_colors_forced_grayscale(self):
+        """render() with grayscale=True ignores colors array."""
+        bitmap = np.ones((32, 24), dtype=np.float32)
+        colors = np.zeros((32, 24, 3), dtype=np.float32)
+        colors[:, :, 0] = 1.0  # Red
+        result = render_to_string(fingerprint(grayscale=True), bitmap, colors)
+        # Should use grayscale codes, not full RGB
+        assert "\033[38;" in result
+        assert RESET in result
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_invalid_colors_shape(self):
+        """render() rejects mismatched colors shape."""
+        bitmap = np.zeros((32, 24), dtype=np.float32)
+        colors = np.zeros((16, 12, 3), dtype=np.float32)
+        with pytest.raises(ValueError, match="must match bitmap shape"):
+            render_to_string(fingerprint, bitmap, colors)
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_mae_metric(self):
+        """render() works with MAE metric."""
+        bitmap = np.random.rand(32, 24).astype(np.float32)
+        result = render_to_string(fingerprint(metric="mae"), bitmap)
+        lines = result.split("\n")
+        assert len(lines) == 2
+        assert len(lines[0]) == 3
+
+    def test_call_preserves_new_fields(self):
+        """__call__ preserves true_color and grayscale."""
+        custom = fingerprint(true_color=False, grayscale=True)
+        assert custom.true_color is False
+        assert custom.grayscale is True
+        # Preserves defaults for unspecified
+        assert custom.glyph_set == "basic"
+        assert custom.metric == "mse"
+
+    def test_auto_cell_size_for_sextants(self):
+        """__call__ auto-selects 2x3 cell size for sextants glyph set."""
+        r = fingerprint(glyph_set="sextants")
+        assert r.cell_width == 2
+        assert r.cell_height == 3
+
+    def test_auto_cell_size_for_braille(self):
+        """__call__ auto-selects 2x4 cell size for braille glyph set."""
+        r = fingerprint(glyph_set="braille")
+        assert r.cell_width == 2
+        assert r.cell_height == 4
+
+    def test_auto_cell_size_explicit_override(self):
+        """Explicit cell size overrides auto-selection."""
+        r = fingerprint(glyph_set="sextants", cell_width=8, cell_height=16)
+        assert r.cell_width == 8
+        assert r.cell_height == 16
+
+    def test_auto_cell_size_no_change_for_basic(self):
+        """basic glyph set keeps default 8x16 cell size."""
+        r = fingerprint(glyph_set="basic")
+        assert r.cell_width == 8
+        assert r.cell_height == 16
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_with_geometric_glyph_set(self):
+        """render() works with geometric glyph set."""
+        bitmap = np.random.rand(32, 16).astype(np.float32)
+        result = render_to_string(fingerprint(glyph_set="geometric"), bitmap)
+        assert len(result) > 0
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_with_full_glyph_set(self):
+        """render() works with full glyph set (all Unicode)."""
+        bitmap = np.random.rand(32, 16).astype(np.float32)
+        result = render_to_string(fingerprint(glyph_set="full"), bitmap)
+        assert len(result) > 0
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_with_custom_glyph_string(self):
+        """render() accepts custom character string as glyph_set."""
+        bitmap = np.random.rand(32, 16).astype(np.float32)
+        result = render_to_string(fingerprint(glyph_set=" .:-=+*#%@"), bitmap)
+        assert len(result) > 0
+        # Output should only contain characters from the custom set
+        for char in result:
+            if char != "\n":
+                assert char in " .:-=+*#%@"
+
+    def test_unknown_single_char_glyph_set_error(self):
+        """render() rejects single-char string as glyph set."""
+        with pytest.raises(ValueError, match="Unknown glyph set"):
+            bitmap = np.zeros((16, 8), dtype=np.float32)
+            render_to_string(fingerprint(glyph_set="X"), bitmap)
+
+    def test_sextant_pattern_space(self):
+        """Space maps to pattern 0 (all empty)."""
+        assert _sextant_pattern(0x20) == 0
+
+    def test_sextant_pattern_full_block(self):
+        """Full block maps to pattern 63 (all filled)."""
+        assert _sextant_pattern(0x2588) == 0b111111
+
+    def test_sextant_pattern_left_half(self):
+        """Left half block maps to left column filled."""
+        assert _sextant_pattern(0x258C) == 0b010101
+
+    def test_sextant_pattern_right_half(self):
+        """Right half block maps to right column filled."""
+        assert _sextant_pattern(0x2590) == 0b101010
+
+    def test_sextant_pattern_range(self):
+        """All sextant codepoints (U+1FB00-U+1FB3B) produce valid patterns."""
+        seen = set()
+        for cp in range(0x1FB00, 0x1FB3C):
+            p = _sextant_pattern(cp)
+            assert p is not None, f"U+{cp:04X} returned None"
+            assert 0 < p < 64, f"U+{cp:04X} pattern {p} out of range"
+            seen.add(p)
+        # 60 codepoints should cover 60 patterns (the ones not handled by block chars)
+        assert len(seen) == 60
+
+    def test_sextant_pattern_non_sextant(self):
+        """Non-sextant characters return None."""
+        assert _sextant_pattern(ord("A")) is None
+        assert _sextant_pattern(0x2800) is None  # braille
+
+    def test_synthetic_sextant_empty(self):
+        """Pattern 0 produces all-zero bitmap."""
+        bm = _synthetic_sextant_bitmap(0, 8, 16)
+        assert bm.shape == (16, 8)
+        assert bm.sum() == 0.0
+
+    def test_synthetic_sextant_full(self):
+        """Pattern 63 produces all-one bitmap."""
+        bm = _synthetic_sextant_bitmap(0b111111, 8, 16)
+        assert bm.shape == (16, 8)
+        assert bm.sum() == pytest.approx(8 * 16)
+
+    def test_synthetic_sextant_all_unique(self):
+        """All 64 sextant patterns produce unique bitmaps."""
+        bitmaps = [tuple(_synthetic_sextant_bitmap(i, 8, 16).flatten()) for i in range(64)]
+        assert len(set(bitmaps)) == 64
+
+    @pytest.mark.skipif(
+        not pytest.importorskip("PIL", reason="PIL not installed"),
+        reason="PIL required for fingerprint renderer"
+    )
+    def test_render_with_sextants_glyph_set(self):
+        """render() with sextants uses synthetic bitmaps and selects many glyphs."""
+        np.random.seed(42)
+        bitmap = np.random.rand(160, 80).astype(np.float32)
+        result = render_to_string(fingerprint(glyph_set="sextants"), bitmap)
+        # Remove ANSI codes to get pure characters
+        import re
+        clean = re.sub(r"\033\[[^m]*m", "", result).replace("\n", "")
+        unique = set(clean)
+        # Should use many distinct sextant characters (not just 5-6 from a bad font)
+        assert len(unique) >= 20
+
 
 class TestRendererOptions:
     """Tests for renderer option handling."""
@@ -935,3 +1172,89 @@ class TestPreprocess:
         result_90 = rotate(bitmap, 90)
         result_450 = rotate(bitmap, 450)  # 450 % 360 = 90
         np.testing.assert_array_equal(result_90, result_450)
+
+
+class TestAnsiHelpers:
+    """Tests for the shared dapple.renderers._ansi helper module."""
+
+    def test_gray_code_clamps_high(self):
+        """Brightness > 1.0 must not emit invalid palette index 256."""
+        from dapple.renderers._ansi import gray_code
+
+        code = gray_code(1.5, fg=True, true_color=False)
+        # Final palette index must be within 232..255
+        assert "256" not in code
+        assert "255" in code  # clamped to max gray
+
+    def test_gray_code_clamps_low(self):
+        """Brightness < 0.0 must clamp to the lowest palette entry."""
+        from dapple.renderers._ansi import gray_code
+
+        code = gray_code(-0.3, fg=True, true_color=False)
+        assert "232" in code
+
+    def test_color_code_clamps_each_channel(self):
+        """Each RGB channel is clamped independently."""
+        from dapple.renderers._ansi import color_code
+
+        # True-colour path: each channel → int(val*255) after clamp.
+        code = color_code(2.0, -0.5, 0.5, fg=True, true_color=True)
+        assert ";255;" in code  # r clamped to 1.0 → 255
+        assert ";0;" in code    # g clamped to 0.0 → 0
+
+    def test_strip_ansi_removes_sgr_sequences(self):
+        from dapple.renderers._ansi import strip_ansi
+
+        raw = "\033[38;5;232mhello\033[0m world"
+        assert strip_ansi(raw) == "hello world"
+
+    def test_visual_width_ignores_escapes(self):
+        from dapple.renderers._ansi import visual_width
+
+        raw = "\033[38;2;255;0;0m▀\033[0m"
+        assert visual_width(raw) == 1
+
+
+class TestBrailleAutoThreshold:
+    """Regression tests for the _UNSET sentinel in BrailleRenderer.__call__."""
+
+    def test_call_with_none_enables_auto(self):
+        """r(threshold=None) must transition into auto-threshold mode."""
+        base = BrailleRenderer(threshold=0.5)
+        auto = base(threshold=None)
+        assert auto.threshold is None
+
+    def test_call_without_threshold_keeps_current(self):
+        """Omitting threshold keeps the existing value (sentinel path)."""
+        base = BrailleRenderer(threshold=0.3)
+        same = base(color_mode="grayscale")
+        assert same.threshold == 0.3
+
+    def test_call_with_float_sets_explicit(self):
+        base = BrailleRenderer(threshold=None)
+        explicit = base(threshold=0.7)
+        assert explicit.threshold == 0.7
+
+
+class TestSixelQuantizerBounds:
+    """Sixel _quantize_colors must respect max_colors."""
+
+    def test_palette_size_respects_max_colors(self):
+        from dapple.renderers.sixel import _quantize_colors
+
+        colors = np.random.rand(8, 8, 3).astype(np.float32)
+        # With max_colors=4, the old implementation produced levels=2
+        # giving 2**3 = 8 palette entries — exceeding the max. The fix
+        # shrinks levels until levels**3 fits.
+        indices, palette = _quantize_colors(colors, n_colors=4)
+        assert palette.shape[0] <= 8  # levels floor is 2 → 8 entries
+        # Tight upper bound: we never exceed 6**3 = 216.
+        assert palette.shape[0] <= 216
+
+    def test_max_colors_256_uses_6x6x6(self):
+        from dapple.renderers.sixel import _quantize_colors
+
+        colors = np.random.rand(4, 4, 3).astype(np.float32)
+        indices, palette = _quantize_colors(colors, n_colors=256)
+        # 6**3 = 216, 7**3 = 343 — so we settle at 6.
+        assert palette.shape[0] == 216

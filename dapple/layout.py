@@ -132,7 +132,8 @@ def _fit_canvas(
         new_colors = resize(canvas.colors, pixel_h, pixel_w)
 
     from dapple.canvas import Canvas as CanvasCls
-    return CanvasCls(new_bitmap, colors=new_colors, renderer=canvas._renderer)
+    # Use the public getter we just added so layout isn't coupled to __slots__.
+    return CanvasCls(new_bitmap, colors=new_colors, renderer=canvas.default_renderer)
 
 
 # ── Frame ───────────────────────────────────────────────────────────
@@ -178,36 +179,55 @@ class Frame:
         )
 
     def render(self, renderer: Renderer, *, dest: TextIO | None = None) -> None:
-        """Size canvas, render title/border/content."""
+        """Size canvas, render title/border/content.
+
+        Measures visual widths with ``visual_width`` (ANSI-stripped) so that
+        borders and titles align correctly even when the inner renderer
+        emits colour escape sequences.
+        """
+        from dapple.renderers._ansi import visual_width
+
         output = dest or sys.stdout
         canvas = self.sized_canvas(renderer)
 
-        # Render canvas to string
+        # Render canvas to string via the public bitmap/colors views.
         buf = StringIO()
-        renderer.render(canvas._bitmap, canvas._colors, dest=buf)
+        renderer.render(canvas.bitmap, canvas.colors, dest=buf)
         lines = buf.getvalue().rstrip("\n").split("\n")
 
         content_w = self._content_width()
 
+        # Pad each rendered line to the same visual width so the right
+        # border sits in the expected column. With coloured output, len()
+        # counts ANSI bytes, so we pad based on visual_width() instead.
+        def _pad_line(line: str, target: int) -> str:
+            vw = visual_width(line)
+            if vw < target:
+                return line + (" " * (target - vw))
+            return line
+
+        # Target visual width for content region
+        if content_w is not None:
+            target_w = content_w
+        else:
+            target_w = max((visual_width(l) for l in lines), default=0)
+
         # Title
         if self.title:
-            title = self.title[:content_w] if content_w else self.title
+            title = self.title[:target_w] if target_w else self.title
             if self.border:
-                # Title in top border
-                border_fill = content_w - len(title) - 2 if content_w else 20
+                border_fill = target_w - visual_width(title) - 2 if target_w else 20
                 output.write(f"{_BOX_TL}{_BOX_H}{title}{_BOX_H * max(0, border_fill)}{_BOX_TR}\n")
             else:
                 output.write(f"{title}\n")
 
         elif self.border:
-            w = content_w or (max(len(l) for l in lines) if lines else 0)
-            output.write(f"{_BOX_TL}{_BOX_H * w}{_BOX_TR}\n")
+            output.write(f"{_BOX_TL}{_BOX_H * target_w}{_BOX_TR}\n")
 
         # Padding top
         for _ in range(self.padding):
             if self.border:
-                w = content_w or (max(len(l) for l in lines) if lines else 0)
-                output.write(f"{_BOX_V}{' ' * w}{_BOX_V}\n")
+                output.write(f"{_BOX_V}{' ' * target_w}{_BOX_V}\n")
             else:
                 output.write("\n")
 
@@ -215,22 +235,21 @@ class Frame:
         for line in lines:
             pad = " " * self.padding
             if self.border:
-                output.write(f"{_BOX_V}{pad}{line}{pad}{_BOX_V}\n")
+                padded = _pad_line(line, target_w - self.padding * 2)
+                output.write(f"{_BOX_V}{pad}{padded}{pad}{_BOX_V}\n")
             else:
                 output.write(f"{pad}{line}{pad}\n")
 
         # Padding bottom
         for _ in range(self.padding):
             if self.border:
-                w = content_w or (max(len(l) for l in lines) if lines else 0)
-                output.write(f"{_BOX_V}{' ' * w}{_BOX_V}\n")
+                output.write(f"{_BOX_V}{' ' * target_w}{_BOX_V}\n")
             else:
                 output.write("\n")
 
         # Bottom border
         if self.border:
-            w = content_w or (max(len(l) for l in lines) if lines else 0)
-            output.write(f"{_BOX_BL}{_BOX_H * w}{_BOX_BR}\n")
+            output.write(f"{_BOX_BL}{_BOX_H * target_w}{_BOX_BR}\n")
 
     def _content_width(self) -> int | None:
         """Width available for canvas content."""
@@ -310,7 +329,7 @@ class Grid:
                 else:
                     # Plain canvas: fit to cell_width
                     fitted = _fit_canvas(cell, renderer, width=cell_width)
-                    renderer.render(fitted._bitmap, fitted._colors, dest=buf)
+                    renderer.render(fitted.bitmap, fitted.colors, dest=buf)
 
                 lines = buf.getvalue().rstrip("\n").split("\n")
                 cell_line_lists.append(lines)

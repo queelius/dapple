@@ -4,15 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dapple"
-version = "0.9b0"
+version = "0.9.0"
 description = "Unified terminal graphics library - render bitmaps to braille, blocks, ASCII, sixel, and kitty"
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    {name = "spinoza"}
+    {name = "Alex Towell", email = "lex@metafunctor.com"}
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -34,6 +35,8 @@ adapters = [
     "pillow>=9.0",
     "matplotlib>=3.5",
 ]
+# Individual adapter groups (for callers who only want one)
+cairo = ["pycairo>=1.20"]
 # Tools (each group provides the dependencies needed for that extra)
 imgcat = ["pillow>=9.0"]
 funcat = []
@@ -48,7 +51,7 @@ plotcat = []
 dashcat = ["pyyaml>=6.0"]
 htmlcat = ["pillow>=9.0", "rich>=13.0", "markdownify>=0.11"]
 # Bundles
-all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,datcat,compcat,ansicat,plotcat,dashcat,htmlcat]"]
+all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,datcat,compcat,ansicat,plotcat,dashcat,htmlcat,vizlib]"]
 # Development
 dev = [
     "pytest>=7.0",

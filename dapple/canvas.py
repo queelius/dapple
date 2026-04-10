@@ -124,6 +124,11 @@ class Canvas:
         view.flags.writeable = False
         return view
 
+    @property
+    def default_renderer(self) -> Renderer | None:
+        """Default renderer used by ``__str__``, or ``None`` if unset."""
+        return self._renderer
+
     # Rendering
     def out(self, renderer: Renderer, dest: str | TextIO | None = None) -> None:
         """Output rendered canvas to a destination.
@@ -150,13 +155,16 @@ class Canvas:
     def __str__(self) -> str:
         """Render using default renderer (for REPL/debugging).
 
+        Uses ``braille`` when no default renderer is set — the documented
+        behaviour in both the class docstring and CLAUDE.md. Braille works
+        everywhere (no colour required) and is the safest default for print().
         For explicit control, use out() instead.
         """
         renderer = self._renderer
         if renderer is None:
-            from dapple.renderers import sextants
+            from dapple.renderers import braille
 
-            renderer = sextants
+            renderer = braille
         buf = StringIO()
         renderer.render(self._bitmap, self._colors, dest=buf)
         return buf.getvalue()

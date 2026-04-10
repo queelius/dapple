@@ -31,7 +31,7 @@ class TestCanvasInit:
         """Canvas accepts default renderer."""
         bitmap = np.zeros((10, 20), dtype=np.float32)
         canvas = Canvas(bitmap, renderer=quadrants)
-        assert canvas._renderer is quadrants
+        assert canvas.default_renderer is quadrants
 
     def test_invalid_bitmap_1d(self):
         """Canvas rejects 1D array."""

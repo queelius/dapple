@@ -15,18 +15,11 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# ANSI escape codes
-RESET = "\033[0m"
-
-# Color mode constants
-_GRAY_LEVELS = 23
-_RGB_LEVELS = 5
-_GRAY_BASE = 232
-_RGB_BASE = 16
-_UNIFORM_THRESHOLD = 0.001
-
 # ITU-R BT.601 luminance coefficients
 from dapple.color import LUM_R as _LUM_R, LUM_G as _LUM_G, LUM_B as _LUM_B
+from dapple.renderers._ansi import RESET, color_code as _color_code, gray_code as _gray_code
+
+_UNIFORM_THRESHOLD = 0.001
 
 
 def _build_sextant_table() -> list[str]:
@@ -104,26 +97,6 @@ SEXTANT_CHARS = _build_sextant_table()
 # Bit weights for pattern calculation: cells 0-5 in row-major order
 # Cell layout: row0: [0,1], row1: [2,3], row2: [4,5]
 _BITS = np.array([32, 16, 8, 4, 2, 1], dtype=np.uint8)
-
-
-def _gray_code(brightness: float, fg: bool, true_color: bool = False) -> str:
-    """Generate ANSI escape code for grayscale color."""
-    prefix = 38 if fg else 48
-    if true_color:
-        v = int(brightness * 255)
-        return f"\033[{prefix};2;{v};{v};{v}m"
-    level = int(brightness * _GRAY_LEVELS)
-    return f"\033[{prefix};5;{_GRAY_BASE + level}m"
-
-
-def _color_code(r: float, g: float, b: float, fg: bool, true_color: bool = False) -> str:
-    """Generate ANSI escape code for RGB color."""
-    prefix = 38 if fg else 48
-    if true_color:
-        ri, gi, bi = int(r * 255), int(g * 255), int(b * 255)
-        return f"\033[{prefix};2;{ri};{gi};{bi}m"
-    ri, gi, bi = int(r * _RGB_LEVELS), int(g * _RGB_LEVELS), int(b * _RGB_LEVELS)
-    return f"\033[{prefix};5;{_RGB_BASE + 36 * ri + 6 * gi + bi}m"
 
 
 @dataclass(frozen=True)

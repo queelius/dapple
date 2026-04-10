@@ -246,7 +246,7 @@ class TestIntegration:
         from io import StringIO
         buf = StringIO()
         braille(threshold=0.2, color_mode="truecolor").render(
-            canvas._bitmap, canvas._colors, dest=buf,
+            canvas.bitmap, canvas.colors, dest=buf,
         )
         result = buf.getvalue()
         assert len(result) > 0
@@ -257,7 +257,7 @@ class TestIntegration:
         from io import StringIO
         buf = StringIO()
         sextants(true_color=True).render(
-            canvas._bitmap, canvas._colors, dest=buf,
+            canvas.bitmap, canvas.colors, dest=buf,
         )
         result = buf.getvalue()
         assert len(result) > 0

@@ -6,6 +6,7 @@ Supports single-image display and multi-image grid/contact-sheet mode.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -68,8 +69,8 @@ def _imgcat_single(
         canvas = Canvas(bitmap, colors=canvas.colors)
 
     # Output
-    colors_to_use = None if options.no_color else canvas._colors
-    rend.render(canvas._bitmap, colors_to_use, dest=dest)
+    colors_to_use = None if options.no_color else canvas.colors
+    rend.render(canvas.bitmap, colors_to_use, dest=dest)
     dest.write("\n")
 
 
@@ -295,27 +296,34 @@ def main() -> None:
     from dapple.extras.common import paged_output, stdin_to_tempfile
 
     images = list(args.images) if args.images else []
-    stdin_ctx = None
-    if images and str(images[0]) == "-":
-        stdin_ctx = stdin_to_tempfile(suffix=".png")
-        stdin_path = stdin_ctx.__enter__()
-        images[0] = stdin_path
-
-    if not images:
-        parser.print_help()
-        sys.exit(1)
-
-    # Determine output destination
-    dest: TextIO
-    if args.output:
-        dest = open(args.output, "w", encoding="utf-8")
-    else:
-        dest = sys.stdout
-
     errors: list[str] = []
     exit_code = 0
-    try:
-        with paged_output(dest, pager=args.pager) as output:
+
+    # ExitStack lets us register stdin-tempfile, output-file, and pager
+    # context managers in one place — so exceptions propagate correctly
+    # and no __exit__ is ever called with bogus (None, None, None) while
+    # the real exception is in flight.
+    with contextlib.ExitStack() as stack:
+        if images and str(images[0]) == "-":
+            stdin_path = stack.enter_context(stdin_to_tempfile(suffix=".png"))
+            images[0] = stdin_path
+
+        if not images:
+            parser.print_help()
+            sys.exit(1)
+
+        # Determine output destination
+        dest: TextIO
+        if args.output:
+            dest = stack.enter_context(
+                open(args.output, "w", encoding="utf-8")
+            )
+        else:
+            dest = sys.stdout
+
+        try:
+            output = stack.enter_context(paged_output(dest, pager=args.pager))
+
             # Multiple images -> grid mode (imgcat handles the grid internally)
             if len(images) > 1:
                 try:
@@ -360,13 +368,8 @@ def main() -> None:
                         errors.append(f"{image_path.name}: Missing dependency: {e}")
                     except Exception as e:
                         errors.append(f"{image_path}: {e}")
-    except KeyboardInterrupt:
-        exit_code = 130
-    finally:
-        if args.output:
-            dest.close()
-        if stdin_ctx:
-            stdin_ctx.__exit__(None, None, None)
+        except KeyboardInterrupt:
+            exit_code = 130
 
     if errors:
         for err in errors:

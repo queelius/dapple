@@ -256,8 +256,8 @@ def pdfcat(
                 canvas = Canvas(bitmap, colors=canvas.colors)
 
             # Render
-            colors_to_use = None if no_color else canvas._colors
-            rend.render(canvas._bitmap, colors_to_use, dest=output)
+            colors_to_use = None if no_color else canvas.colors
+            rend.render(canvas.bitmap, colors_to_use, dest=output)
             output.write("\n")
 
         return True

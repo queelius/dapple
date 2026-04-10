@@ -54,7 +54,7 @@ def ansicat(
     canvas, rend = terminal_fit(canvas, rend, width=width)
 
     # Render
-    rend.render(canvas._bitmap, canvas._colors, dest=output)
+    rend.render(canvas.bitmap, canvas.colors, dest=output)
     output.write("\n")
 
 

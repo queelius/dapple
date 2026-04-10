@@ -134,13 +134,31 @@ class TestEvaluateExpression:
         evaluate_expression("ceil(x)", x)
 
     def test_no_builtins(self):
-        """Test that builtins are not accessible."""
+        """Test that builtins are not accessible.
+
+        The AST-based walker rejects non-whitelisted function calls with
+        a ValueError rather than NameError — the stricter semantics that
+        closed the old sandbox escape via ``__builtins__``.
+        """
         x = np.array([1])
-        with pytest.raises(NameError):
+        with pytest.raises(ValueError, match="non-whitelisted"):
             evaluate_expression("print(x)", x)
 
-        with pytest.raises(NameError):
+        with pytest.raises(ValueError, match="non-whitelisted"):
             evaluate_expression("__import__('os')", x)
+
+    def test_sandbox_escape_blocked(self):
+        """Classic ``__class__.__base__.__subclasses__()`` escape is rejected.
+
+        This is the reason we use an AST walker: attribute access must
+        not be possible at all, so the known escape paths simply don't
+        parse into executable nodes.
+        """
+        x = np.array([1.0])
+        with pytest.raises(ValueError, match="Disallowed"):
+            evaluate_expression("x.__class__", x)
+        with pytest.raises(ValueError, match="Disallowed"):
+            evaluate_expression("(1).__class__.__mro__", x)
 
     def test_constant_returns_array(self):
         """Test that constant expressions return arrays."""

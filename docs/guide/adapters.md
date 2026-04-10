@@ -310,8 +310,8 @@ Colors are mapped to the reconstructed Canvas: foreground colors are applied to 
 ```python
 from dapple.adapters.ansi import ANSIAdapter
 
-adapter = ANSIAdapter(format="braille")
-canvas = adapter.parse(text)
+adapter = ANSIAdapter(text, format="braille")
+canvas = adapter.to_canvas()
 ```
 
 ### Use cases

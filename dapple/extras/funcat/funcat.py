@@ -8,7 +8,9 @@ Supports chaining multiple functions via JSON piping:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
+import operator as op
 import os
 import shutil
 import sys
@@ -30,14 +32,112 @@ RENDERERS: dict[str, Renderer] = {
 }
 
 
-SAFE_NAMESPACE = {
+# Whitelisted functions and constants for math expressions.
+# IMPORTANT: Used by the AST-based safe_compute below. Do not add anything
+# here that exposes attribute access, __class__, or arbitrary callables — the
+# sandbox guarantees depend on every entry being a pure numeric function.
+SAFE_FUNCTIONS: dict[str, object] = {
     'sin': np.sin, 'cos': np.cos, 'tan': np.tan,
     'asin': np.arcsin, 'acos': np.arccos, 'atan': np.arctan,
     'sinh': np.sinh, 'cosh': np.cosh, 'tanh': np.tanh,
     'exp': np.exp, 'log': np.log, 'log10': np.log10, 'log2': np.log2,
     'sqrt': np.sqrt, 'abs': np.abs, 'floor': np.floor, 'ceil': np.ceil,
-    'pi': np.pi, 'e': np.e,
+    'min': np.minimum, 'max': np.maximum,
 }
+
+SAFE_CONSTANTS: dict[str, float] = {
+    'pi': float(np.pi),
+    'e': float(np.e),
+    'tau': float(2 * np.pi),
+    'inf': float('inf'),
+    'nan': float('nan'),
+}
+
+# Binary and unary operators allowed in expressions.
+_BIN_OPS = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.FloorDiv: op.floordiv,
+    ast.Mod: op.mod,
+    ast.Pow: op.pow,
+}
+
+_UNARY_OPS = {
+    ast.UAdd: op.pos,
+    ast.USub: op.neg,
+}
+
+
+def safe_compute(expr: str, variables: dict[str, object]) -> object:
+    """Compute a mathematical expression safely via AST walking.
+
+    Only allows numeric literals, whitelisted function calls, whitelisted
+    constants, and variables from the caller-provided ``variables`` dict.
+    Rejects attribute access, subscripts, comprehensions, lambdas, and any
+    node type not explicitly whitelisted. This prevents the classic
+    ``{'__builtins__': {}}`` sandbox-escape via ``().__class__.__base__``.
+
+    Args:
+        expr: Expression string (e.g. "sin(x) + 2*x").
+        variables: Mapping from variable name to value (numpy arrays or scalars).
+
+    Returns:
+        Result of computing the expression.
+
+    Raises:
+        ValueError: If the expression contains disallowed constructs or
+            references unknown names.
+    """
+    try:
+        tree = ast.parse(expr, mode='eval')
+    except SyntaxError as e:
+        raise ValueError(f"Invalid expression {expr!r}: {e}") from None
+
+    def _walk(node: ast.AST) -> object:
+        if isinstance(node, ast.Expression):
+            return _walk(node.body)
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float, complex)):
+                return node.value
+            raise ValueError(f"Unsupported literal type: {type(node.value).__name__}")
+        if isinstance(node, ast.Name):
+            name = node.id
+            if name in variables:
+                return variables[name]
+            if name in SAFE_CONSTANTS:
+                return SAFE_CONSTANTS[name]
+            if name in SAFE_FUNCTIONS:
+                return SAFE_FUNCTIONS[name]
+            raise ValueError(f"Unknown name: {name!r}")
+        if isinstance(node, ast.BinOp):
+            op_type = type(node.op)
+            if op_type not in _BIN_OPS:
+                raise ValueError(f"Unsupported binary operator: {op_type.__name__}")
+            return _BIN_OPS[op_type](_walk(node.left), _walk(node.right))
+        if isinstance(node, ast.UnaryOp):
+            op_type = type(node.op)
+            if op_type not in _UNARY_OPS:
+                raise ValueError(f"Unsupported unary operator: {op_type.__name__}")
+            return _UNARY_OPS[op_type](_walk(node.operand))
+        if isinstance(node, ast.Call):
+            # Only allow calls to names from SAFE_FUNCTIONS — never attribute
+            # access or arbitrary callable expressions.
+            if not isinstance(node.func, ast.Name):
+                raise ValueError("Only direct function calls are allowed")
+            fname = node.func.id
+            if fname not in SAFE_FUNCTIONS:
+                raise ValueError(f"Call to non-whitelisted function: {fname!r}")
+            if node.keywords:
+                raise ValueError("Keyword arguments are not allowed")
+            args = [_walk(a) for a in node.args]
+            return SAFE_FUNCTIONS[fname](*args)  # type: ignore[operator]
+        raise ValueError(
+            f"Disallowed expression element: {type(node).__name__}"
+        )
+
+    return _walk(tree)
 
 # Default x range for function plots (-2π to 2π)
 DEFAULT_X_MIN = -2 * np.pi
@@ -103,9 +203,12 @@ def parse_color(color_str: str) -> tuple[float, float, float]:
 
 
 def evaluate_expression(expr: str, x: np.ndarray) -> np.ndarray:
-    """Safely evaluate a mathematical expression."""
-    namespace = {**SAFE_NAMESPACE, 'x': x}
-    result = eval(expr, {"__builtins__": {}}, namespace)
+    """Safely evaluate a mathematical expression over x.
+
+    Uses an AST-based walker, not Python's builtin code executor — see
+    :func:`safe_compute` for the full sandbox description.
+    """
+    result = safe_compute(expr, {'x': x})
     # Ensure result is always an array with same shape as x
     return np.broadcast_to(result, x.shape).astype(np.float64)
 
@@ -194,9 +297,9 @@ def evaluate_parametric(
         ValueError: If no valid values are produced.
     """
     t = np.linspace(t_min, t_max, samples)
-    namespace = {**SAFE_NAMESPACE, 't': t}
-    x = eval(x_expr, {"__builtins__": {}}, namespace)
-    y = eval(y_expr, {"__builtins__": {}}, namespace)
+    variables = {'t': t}
+    x = safe_compute(x_expr, variables)
+    y = safe_compute(y_expr, variables)
 
     x = np.broadcast_to(x, t.shape).astype(np.float64)
     y = np.broadcast_to(y, t.shape).astype(np.float64)
@@ -355,6 +458,10 @@ def render_all(
         all_x_min, all_x_max = float('inf'), float('-inf')
         all_y_min, all_y_max = float('inf'), float('-inf')
 
+        # Track why each skipped expression was skipped so that if ALL
+        # expressions fail we can report what the user actually typed.
+        skipped: list[tuple[str, str]] = []
+
         for expr_cfg in expressions:
             samples = expr_cfg.get('samples') or default_samples
             try:
@@ -376,10 +483,16 @@ def render_all(
                     ey_min, ey_max = compute_y_range(expr_cfg['expr'], x_lo, x_hi, samples)
                     all_y_min = min(all_y_min, ey_min)
                     all_y_max = max(all_y_max, ey_max)
-            except ValueError:
+            except ValueError as exc:
+                skipped.append((expr_cfg['expr'], str(exc)))
                 continue  # Skip invalid expressions for range calculation
 
         if all_y_min == float('inf'):
+            if skipped:
+                detail = "; ".join(f"{name}: {msg}" for name, msg in skipped)
+                raise ValueError(
+                    f"No expressions produce valid values in range ({detail})"
+                )
             raise ValueError("No expressions produce valid values in range")
 
         # Use computed ranges where not specified

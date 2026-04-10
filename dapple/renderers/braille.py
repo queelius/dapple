@@ -15,8 +15,13 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# ANSI escape sequences
-RESET = "\033[0m"
+from dapple.renderers._ansi import RESET
+
+# Sentinel distinguishing "argument not passed" from "explicit None (auto)".
+# Used by BrailleRenderer.__call__ so callers can transition into
+# auto-threshold mode by passing ``threshold=None`` — previously impossible
+# because ``None`` was both the sentinel and a valid field value.
+_UNSET: object = object()
 
 # Mapping from (row, col) in 2x4 region to bit index in braille codepoint.
 # Standard Unicode braille layout:
@@ -122,20 +127,23 @@ class BrailleRenderer:
 
     def __call__(
         self,
-        threshold: float | None = None,
+        threshold: float | None | object = _UNSET,
         color_mode: Literal["none", "grayscale", "truecolor"] | None = None,
     ) -> BrailleRenderer:
         """Create a new renderer with modified options.
 
         Args:
-            threshold: New threshold value (None to keep current)
-            color_mode: New color mode (None to keep current)
+            threshold: New threshold value. Pass ``None`` to enable
+                auto-threshold mode (computed from the bitmap mean at
+                render time). Omit the argument to keep the current value.
+            color_mode: New color mode (None to keep current).
 
         Returns:
             New BrailleRenderer with updated settings.
         """
+        new_threshold = self.threshold if threshold is _UNSET else threshold  # type: ignore[assignment]
         return BrailleRenderer(
-            threshold=threshold if threshold is not None else self.threshold,
+            threshold=new_threshold,
             color_mode=color_mode if color_mode is not None else self.color_mode,
         )
 

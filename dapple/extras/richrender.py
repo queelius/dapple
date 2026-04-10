@@ -161,8 +161,8 @@ class DappleImageItem(ImageItem):
 
             # Render to string (strip colors when no_color is active)
             buf = StringIO()
-            colors = None if self._no_color else canvas._colors
-            self._renderer.render(canvas._bitmap, colors, dest=buf)
+            colors = None if self._no_color else canvas.colors
+            self._renderer.render(canvas.bitmap, colors, dest=buf)
             output = buf.getvalue()
 
             # Yield as text

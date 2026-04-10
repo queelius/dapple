@@ -15,18 +15,11 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# ANSI escape codes
-RESET = "\033[0m"
-
-# Color mode constants
-_GRAY_LEVELS = 23  # Number of gray levels in 256-color mode (232-255)
-_RGB_LEVELS = 5  # Levels per channel in 216-color cube (0-5)
-_GRAY_BASE = 232  # ANSI code for first gray level
-_RGB_BASE = 16  # ANSI code for start of 6x6x6 color cube
-_UNIFORM_THRESHOLD = 0.001  # Threshold for treating a block as uniform color
-
 # ITU-R BT.601 luminance coefficients
 from dapple.color import LUM_R as _LUM_R, LUM_G as _LUM_G, LUM_B as _LUM_B
+from dapple.renderers._ansi import RESET, color_code as _color_code, gray_code as _gray_code
+
+_UNIFORM_THRESHOLD = 0.001  # Threshold for treating a block as uniform color
 
 # Quadrant block characters indexed by 4-bit pattern.
 # Bit positions: TL=8, TR=4, BL=2, BR=1
@@ -51,44 +44,6 @@ QUADRANT_CHARS = [
 
 # Bit weights for pattern calculation: TL, TR, BL, BR
 _BITS = np.array([8, 4, 2, 1], dtype=np.uint8)
-
-
-def _gray_code(brightness: float, fg: bool, true_color: bool = False) -> str:
-    """Generate ANSI escape code for grayscale color.
-
-    Args:
-        brightness: Value from 0.0 (black) to 1.0 (white).
-        fg: True for foreground, False for background.
-        true_color: Use 24-bit RGB mode instead of 256-color mode.
-
-    Returns:
-        ANSI escape sequence string for setting color.
-    """
-    prefix = 38 if fg else 48
-    if true_color:
-        v = int(brightness * 255)
-        return f"\033[{prefix};2;{v};{v};{v}m"
-    level = int(brightness * _GRAY_LEVELS)
-    return f"\033[{prefix};5;{_GRAY_BASE + level}m"
-
-
-def _color_code(r: float, g: float, b: float, fg: bool, true_color: bool = False) -> str:
-    """Generate ANSI escape code for RGB color.
-
-    Args:
-        r, g, b: Color channels, 0.0 to 1.0.
-        fg: True for foreground, False for background.
-        true_color: Use 24-bit RGB mode instead of 216-color cube.
-
-    Returns:
-        ANSI escape sequence string for setting color.
-    """
-    prefix = 38 if fg else 48
-    if true_color:
-        ri, gi, bi = int(r * 255), int(g * 255), int(b * 255)
-        return f"\033[{prefix};2;{ri};{gi};{bi}m"
-    ri, gi, bi = int(r * _RGB_LEVELS), int(g * _RGB_LEVELS), int(b * _RGB_LEVELS)
-    return f"\033[{prefix};5;{_RGB_BASE + 36 * ri + 6 * gi + bi}m"
 
 
 @dataclass(frozen=True)

@@ -82,7 +82,7 @@ class TestNumpyAdapter:
 
         arr = np.zeros((10, 10), dtype=np.float32)
         canvas = from_array(arr, renderer=braille)
-        assert canvas._renderer is braille
+        assert canvas.default_renderer is braille
 
 
 # ─── PILAdapter ──────────────────────────────────────────────────────────────
@@ -224,7 +224,7 @@ class TestPILAdapter:
 
         img = Image.new("L", (20, 10))
         canvas = from_pil(img, renderer=braille)
-        assert canvas._renderer is braille
+        assert canvas.default_renderer is braille
 
     def test_pil_adapter_resize_height_only(self):
         """PILAdapter resizes proportionally with height only."""
@@ -303,6 +303,29 @@ class TestMatplotlibAdapter:
 
         assert canvas.bitmap.ndim == 2
         assert canvas.colors is not None
+
+    def test_figure_size_not_permanently_mutated(self):
+        """to_canvas must restore the original figure size.
+
+        Regression test: the adapter used to call set_size_inches() and
+        leave the caller's figure at the new size, which surprised callers
+        who thought they had a plot-and-export pipeline.
+        """
+        from dapple.adapters.matplotlib import from_matplotlib
+
+        fig, ax = plt.subplots(figsize=(4, 3))
+        ax.plot([0, 1, 2], [0, 1, 0])
+        original_size = tuple(fig.get_size_inches())
+
+        # Force a size change that is different from the original.
+        from_matplotlib(fig, width=800, dpi=100)
+
+        new_size = tuple(fig.get_size_inches())
+        plt.close(fig)
+
+        assert new_size == original_size, (
+            f"Figure size was mutated: {original_size} -> {new_size}"
+        )
 
 
 # ─── CairoAdapter ────────────────────────────────────────────────────────────
@@ -395,4 +418,4 @@ class TestCairoAdapter:
 
         adapter = CairoAdapter(surface, renderer=braille)
         canvas = adapter.to_canvas()
-        assert canvas._renderer is braille
+        assert canvas.default_renderer is braille

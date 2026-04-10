@@ -1,11 +1,13 @@
 """compcat - Compare renderers side-by-side.
 
 Shows the same image rendered with different dapple renderers in a grid.
+Each cell uses its own named renderer — the whole point of the tool.
 """
 
 from __future__ import annotations
 
 import sys
+from io import StringIO
 from pathlib import Path
 from typing import TextIO
 
@@ -23,6 +25,11 @@ def compcat(
 ) -> None:
     """Compare an image across multiple renderers.
 
+    Renders the image once per requested renderer, then lays the results
+    out side-by-side in a single row. Each cell shows the renderer's own
+    output, so fidelity differences between braille/sextants/quadrants/etc.
+    are directly visible.
+
     Args:
         image_path: Path to the image file.
         renderers: List of renderer names to compare.
@@ -39,22 +46,45 @@ def compcat(
         )
 
     from dapple.extras.common import get_renderer
-    from dapple.layout import Frame, Grid, terminal_columns
+    from dapple.layout import terminal_columns, terminal_fit
 
     renderer_names = renderers or DEFAULT_RENDERERS
     output = dest or sys.stdout
 
-    # Load image once
-    canvas = load_image(Path(image_path))
+    # Load image once; each renderer gets its own fitted copy.
+    source_canvas = load_image(Path(image_path))
 
-    # Build grid row: one Frame per renderer
-    frames = [Frame(canvas=canvas, title=name) for name in renderer_names]
+    total_width = width or terminal_columns()
+    num_cells = len(renderer_names)
+    gap = 1
+    cell_width = max(4, (total_width - gap * (num_cells - 1)) // num_cells)
 
-    grid = Grid([frames], width=width or terminal_columns())
+    # Render every cell with its own named renderer. For pixel renderers
+    # (sixel, kitty) the output contains escape sequences that don't
+    # line-align naturally — we still include them, but callers are warned.
+    rendered: list[list[str]] = []
+    titles: list[str] = []
 
-    # Render with sextants (good default for comparison output)
-    display_rend = get_renderer("sextants", grayscale=grayscale, no_color=no_color)
-    grid.render(display_rend, dest=output)
+    for name in renderer_names:
+        rend = get_renderer(name, grayscale=grayscale, no_color=no_color)
+        fitted, fitted_rend = terminal_fit(source_canvas, rend, width=cell_width)
+
+        buf = StringIO()
+        fitted_rend.render(fitted.bitmap, fitted.colors, dest=buf)
+        lines = buf.getvalue().rstrip("\n").split("\n")
+        rendered.append(lines)
+        titles.append(name)
+
+    # Emit titles row, then the rendered content row-by-row.
+    title_parts = [title.center(cell_width)[:cell_width] for title in titles]
+    output.write((" " * gap).join(title_parts) + "\n")
+
+    max_lines = max(len(cell_lines) for cell_lines in rendered) if rendered else 0
+    for line_idx in range(max_lines):
+        parts: list[str] = []
+        for cell_lines in rendered:
+            parts.append(cell_lines[line_idx] if line_idx < len(cell_lines) else "")
+        output.write((" " * gap).join(parts) + "\n")
 
 
 def main() -> None:

@@ -52,6 +52,21 @@ class TestProtocolDetection:
         with patch.dict(os.environ, {"COLORTERM": "truecolor"}, clear=True):
             assert detect_color_support() is True
 
+    def test_detect_color_support_term_dumb(self):
+        """TERM=dumb should disable colour output (POSIX convention)."""
+        with patch.dict(os.environ, {"TERM": "dumb"}, clear=True):
+            assert detect_color_support() is False
+
+    def test_detect_color_support_unknown_defaults_false(self):
+        """No markers at all → err on the side of no colour."""
+        with patch.dict(os.environ, {}, clear=True):
+            assert detect_color_support() is False
+
+    def test_detect_color_support_xterm_256color(self):
+        """xterm-256color is the standard colour-capable TERM."""
+        with patch.dict(os.environ, {"TERM": "xterm-256color"}, clear=True):
+            assert detect_color_support() is True
+
 
 class TestProtocol:
     """Tests for Protocol enum."""
