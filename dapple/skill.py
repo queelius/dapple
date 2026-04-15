@@ -317,7 +317,7 @@ All tools share these flags (where applicable):
 
 | Flag | Purpose |
 |------|---------|
-| `-r RENDERER` | `auto`, `braille`, `quadrants`, `sextants`, `ascii`, `sixel`, `kitty` |
+| `-r RENDERER` | `auto`, `braille`, `quadrants`, `sextants`, `ascii`, `sixel`, `kitty`, `fingerprint` |
 | `-w WIDTH` | Output width in characters (recommended: 60-100) |
 | `-H HEIGHT` | Output height in characters |
 | `--dither` | Floyd-Steinberg dithering for smoother gradients |
@@ -353,6 +353,8 @@ Other renderers:
 - **`auto`** — auto-detects best for the terminal (usually sextants or braille).
 - **`quadrants`** — 2×2 color blocks, lower resolution than sextants.
 - **`ascii`** — ASCII characters only, maximum compatibility.
+- **`fingerprint`** — matches image regions to closest Unicode glyph by visual
+  similarity. Supports fg/bg ANSI colors for enhanced quality.
 - **`sixel`** / **`kitty`** — true-pixel protocols, only work in supported
   terminals (not in Claude Code TUI).
 """

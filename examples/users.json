@@ -1,0 +1,17 @@
+{
+  "users": [
+    {"id": 1, "name": "Alice Chen", "role": "admin", "logins": 342, "active": true},
+    {"id": 2, "name": "Bob Martinez", "role": "editor", "logins": 128, "active": true},
+    {"id": 3, "name": "Charlie Kim", "role": "viewer", "logins": 57, "active": false},
+    {"id": 4, "name": "Diana Okafor", "role": "admin", "logins": 891, "active": true},
+    {"id": 5, "name": "Eve Johansson", "role": "editor", "logins": 203, "active": true},
+    {"id": 6, "name": "Frank Nguyen", "role": "viewer", "logins": 12, "active": false},
+    {"id": 7, "name": "Grace Patel", "role": "editor", "logins": 445, "active": true},
+    {"id": 8, "name": "Hank Wilson", "role": "viewer", "logins": 89, "active": true}
+  ],
+  "metadata": {
+    "total": 8,
+    "exported": "2024-06-15T10:30:00Z",
+    "version": "2.1"
+  }
+}

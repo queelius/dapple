@@ -1,0 +1,16 @@
+{"event":"page_view","user_id":1,"page":"/home","duration_ms":1200,"timestamp":"2024-03-01T08:15:00Z"}
+{"event":"click","user_id":1,"page":"/home","element":"signup_btn","timestamp":"2024-03-01T08:15:12Z"}
+{"event":"page_view","user_id":2,"page":"/docs","duration_ms":45000,"timestamp":"2024-03-01T09:00:00Z"}
+{"event":"page_view","user_id":3,"page":"/pricing","duration_ms":8500,"timestamp":"2024-03-01T09:30:00Z"}
+{"event":"click","user_id":3,"page":"/pricing","element":"plan_pro","timestamp":"2024-03-01T09:31:00Z"}
+{"event":"purchase","user_id":3,"page":"/checkout","amount":29.99,"timestamp":"2024-03-01T09:32:00Z"}
+{"event":"page_view","user_id":4,"page":"/home","duration_ms":3200,"timestamp":"2024-03-01T10:00:00Z"}
+{"event":"page_view","user_id":4,"page":"/blog","duration_ms":12000,"timestamp":"2024-03-01T10:05:00Z"}
+{"event":"error","user_id":5,"page":"/api/v2","error_code":500,"timestamp":"2024-03-01T10:15:00Z"}
+{"event":"page_view","user_id":6,"page":"/home","duration_ms":800,"timestamp":"2024-03-01T11:00:00Z"}
+{"event":"click","user_id":6,"page":"/home","element":"demo_video","timestamp":"2024-03-01T11:00:05Z"}
+{"event":"page_view","user_id":7,"page":"/docs/api","duration_ms":62000,"timestamp":"2024-03-01T11:30:00Z"}
+{"event":"page_view","user_id":8,"page":"/changelog","duration_ms":5400,"timestamp":"2024-03-01T12:00:00Z"}
+{"event":"purchase","user_id":8,"page":"/checkout","amount":99.99,"timestamp":"2024-03-01T12:10:00Z"}
+{"event":"error","user_id":2,"page":"/api/v1","error_code":429,"timestamp":"2024-03-01T12:30:00Z"}
+{"event":"page_view","user_id":1,"page":"/settings","duration_ms":4100,"timestamp":"2024-03-01T13:00:00Z"}
