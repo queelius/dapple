@@ -330,6 +330,30 @@ def _get_glyph_cache(
     return _glyph_caches[key]
 
 
+def clear_glyph_caches() -> None:
+    """Drop all cached glyph bitmaps.
+
+    Useful for benchmarking (to time cold cache builds) or for reclaiming
+    memory after rendering with large custom glyph sets.
+    """
+    _glyph_caches.clear()
+
+
+def warm_glyph_cache(
+    glyph_set: str,
+    cell_width: int = 8,
+    cell_height: int = 16,
+    font_path: str | None = None,
+) -> int:
+    """Pre-build the fingerprint glyph cache for a given configuration.
+
+    Returns the number of glyphs successfully rendered, which may be
+    smaller than the requested set if the active font lacks some glyphs.
+    """
+    cache = _get_glyph_cache(glyph_set, cell_width, cell_height, font_path)
+    return len(cache.glyphs)
+
+
 # Optimal cell sizes for glyph sets with known native renderers.
 # Using native dimensions avoids over-averaging in color computation.
 _NATIVE_CELL_SIZES: dict[str, tuple[int, int]] = {

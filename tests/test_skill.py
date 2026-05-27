@@ -9,6 +9,8 @@ from unittest.mock import patch
 import pytest
 
 from dapple.skill import (
+    _EXTRAS,
+    _TOOL_SECTIONS,
     _can_import,
     detect_extras,
     generate_skill,
@@ -42,11 +44,20 @@ class TestCanImport:
 class TestDetectExtras:
     def test_returns_all_keys(self):
         result = detect_extras()
-        expected_keys = {
-            "imgcat", "pdfcat", "mdcat", "vidcat", "datcat", "funcat",
-            "compcat", "ansicat", "plotcat", "dashcat", "htmlcat",
-        }
-        assert set(result.keys()) == expected_keys
+        assert set(result.keys()) == set(_EXTRAS)
+
+    def test_tool_sections_cover_all_extras(self):
+        """Every registered extra has a corresponding doc section.
+
+        Catches drift between _EXTRAS and _TOOL_SECTIONS, which used to
+        be a silent failure: the skill table listed the extra but had no
+        section explaining how to use it.
+        """
+        assert set(_TOOL_SECTIONS) == set(_EXTRAS), (
+            f"_EXTRAS and _TOOL_SECTIONS keys diverged: "
+            f"missing sections={set(_EXTRAS) - set(_TOOL_SECTIONS)}, "
+            f"orphan sections={set(_TOOL_SECTIONS) - set(_EXTRAS)}"
+        )
 
     def test_all_values_are_bool(self):
         result = detect_extras()

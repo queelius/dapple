@@ -63,7 +63,12 @@ from dapple.renderers.sextants import SextantsRenderer, sextants
 from dapple.renderers.ascii import AsciiRenderer, ascii
 from dapple.renderers.sixel import SixelRenderer, sixel
 from dapple.renderers.kitty import KittyRenderer, kitty
-from dapple.renderers.fingerprint import FingerprintRenderer, fingerprint
+from dapple.renderers.fingerprint import (
+    FingerprintRenderer,
+    clear_glyph_caches,
+    fingerprint,
+    warm_glyph_cache,
+)
 
 __all__ = [
     "Renderer",
@@ -81,4 +86,6 @@ __all__ = [
     "kitty",
     "FingerprintRenderer",
     "fingerprint",
+    "clear_glyph_caches",
+    "warm_glyph_cache",
 ]

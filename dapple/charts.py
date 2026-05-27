@@ -27,6 +27,7 @@ def sparkline(
     width: int | None = None,
     height: int = 4,
     color: tuple[float, float, float] | None = None,
+    thickness: int = 1,
 ) -> Canvas:
     """Sparkline chart. Width/height in characters.
 
@@ -35,6 +36,7 @@ def sparkline(
         width: Width in characters (None = terminal width).
         height: Height in characters (default 4).
         color: RGB color tuple (0-1).
+        thickness: Line thickness in pixels (default 1).
 
     Returns:
         Canvas with the sparkline rendered.
@@ -42,7 +44,10 @@ def sparkline(
     from dapple.extras.vizlib.charts import sparkline as _sparkline
 
     w = width or terminal_columns()
-    return _sparkline(values, width=w * _REF_CELL_W, height=height * _REF_CELL_H, color=color)
+    return _sparkline(
+        values, width=w * _REF_CELL_W, height=height * _REF_CELL_H,
+        color=color, thickness=thickness,
+    )
 
 
 def line_plot(
@@ -52,15 +57,20 @@ def line_plot(
     height: int = 20,
     color: tuple[float, float, float] | None = None,
     show_axes: bool = True,
+    series: list[tuple[Sequence[float], tuple[float, float, float] | None]] | None = None,
+    thickness: int = 1,
 ) -> Canvas:
     """Line plot with optional axes. Width/height in characters.
 
     Args:
-        values: Numeric data points.
+        values: Numeric data points (primary series).
         width: Width in characters (None = terminal width).
         height: Height in characters (default 20).
         color: RGB color tuple (0-1).
         show_axes: Draw a baseline axis at y=0 if in range.
+        series: Additional series as (values, color) tuples. Colors auto-cycle
+                from COLOR_PALETTE when None.
+        thickness: Line thickness in pixels (default 1).
 
     Returns:
         Canvas with the line plot rendered.
@@ -71,6 +81,7 @@ def line_plot(
     return _line_plot(
         values, width=w * _REF_CELL_W, height=height * _REF_CELL_H,
         color=color, show_axes=show_axes,
+        series=series, thickness=thickness,
     )
 
 

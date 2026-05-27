@@ -1,3 +1,7 @@
+> **STATUS:** Historical plan (2026-02-15). The `diffcat` tool described
+> below was removed in 0.9.0. See the current README and `docs/tools/`
+> for the up-to-date tool inventory.
+
 # dapple 0.6 Design: Layout Engine + vizlib Promotion + Extras
 
 **Goal:** Strengthen dapple's programmatic foundation (sizing, layout, composition), promote chart primitives to a first-class API, then refactor and extend CLI extras on that foundation.

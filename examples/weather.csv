@@ -1,0 +1,31 @@
+city,month,temp_c,humidity,rainfall_mm,wind_kph,condition
+Tokyo,Jan,5.2,45,52,15,cloudy
+Tokyo,Feb,6.1,48,56,14,cloudy
+Tokyo,Mar,10.3,55,117,13,rainy
+Tokyo,Apr,15.4,62,125,12,rainy
+Tokyo,May,20.1,65,138,11,rainy
+Tokyo,Jun,23.5,72,168,10,rainy
+London,Jan,4.9,81,55,19,cloudy
+London,Feb,5.0,76,41,18,cloudy
+London,Mar,7.2,73,42,17,cloudy
+London,Apr,9.8,68,44,15,partly_sunny
+London,May,13.2,65,49,14,partly_sunny
+London,Jun,16.4,64,45,13,sunny
+Sydney,Jan,23.5,65,102,17,sunny
+Sydney,Feb,23.4,67,118,16,sunny
+Sydney,Mar,22.1,68,131,15,rainy
+Sydney,Apr,19.5,70,127,14,cloudy
+Sydney,May,16.3,71,123,13,cloudy
+Sydney,Jun,13.8,72,132,12,rainy
+New York,Jan,-0.3,61,87,18,snowy
+New York,Feb,1.0,59,79,17,snowy
+New York,Mar,5.3,58,111,16,cloudy
+New York,Apr,11.1,56,114,14,rainy
+New York,May,16.6,63,106,12,partly_sunny
+New York,Jun,21.7,66,112,11,sunny
+Nairobi,Jan,19.2,55,58,12,sunny
+Nairobi,Feb,19.8,52,51,13,sunny
+Nairobi,Mar,20.1,58,96,12,rainy
+Nairobi,Apr,19.5,70,211,10,rainy
+Nairobi,May,18.2,68,158,11,rainy
+Nairobi,Jun,16.8,60,35,13,cloudy

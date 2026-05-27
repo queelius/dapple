@@ -25,3 +25,9 @@ site/
 # OS
 .DS_Store
 dev/
+
+# Tooling caches
+.serena/
+
+# Local scratch / large binaries that should not ship with the repo
+examples/test

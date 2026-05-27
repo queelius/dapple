@@ -23,11 +23,12 @@ python -c "from dapple import Canvas, braille; print('OK')"               # veri
 
 ## Architecture
 
-### Three layers
+### Four layers
 
 1. **Core** (`dapple/canvas.py`, `dapple/renderers/`, `dapple/color.py`, `dapple/preprocess.py`, `dapple/auto.py`) — numpy only, no optional deps
-2. **Adapters** (`dapple/adapters/`) — bridge external libraries (PIL, matplotlib, cairo, ANSI) to Canvas; optional deps
-3. **Extras** (`dapple/extras/`) — CLI tools built on dapple (imgcat, funcat, pdfcat, mdcat, vidcat, datcat, htmlcat, compcat, ansicat, plotcat, dashcat, vizlib); each has its own optional dependency group in pyproject.toml
+2. **Layout** (`dapple/layout.py`) — `Frame`, `Grid`, `terminal_fit()` for composing canvases. Core-only (numpy). `terminal_fit()` is the one-stop entry point: returns (canvas, renderer) sized for the terminal. Frame/Grid handle titled, bordered, multi-canvas arrangements.
+3. **Adapters** (`dapple/adapters/`) — bridge external libraries (PIL, matplotlib, cairo, ANSI) to Canvas; optional deps
+4. **Extras** (`dapple/extras/`) — CLI tools built on dapple (imgcat, funcat, pdfcat, mdcat, vidcat, datcat, htmlcat, compcat, ansicat, plotcat, dashcat, vizlib); each has its own optional dependency group in pyproject.toml
 
 ### Data conventions
 
@@ -47,6 +48,14 @@ Every renderer follows the same template:
 
 Both the class and the default instance are exported from `dapple/renderers/__init__.py` and re-exported from `dapple/__init__.py`.
 
+### Fingerprint renderer
+
+The fingerprint renderer (`dapple/renderers/fingerprint.py`) is architecturally distinct from other renderers. It uses PIL to pre-render candidate Unicode glyphs to small bitmaps, then matches each input region to the closest glyph via MSE. Key internals:
+- **`GlyphCache`**: Lazy-loads glyph bitmaps, stacks them into a numpy array for vectorized comparison. Pre-computes squared norms for BLAS-accelerated distance.
+- **Named glyph sets**: `basic` (ASCII), `blocks`, `braille`, `geometric`, `math`, `sextants`, `symbols`, `dingbats`, `extended`, `full` (~1200 chars). Custom strings of 2+ chars also accepted.
+- **Color via glyph masking**: The matched glyph bitmap serves as a mask — ink pixels (>0.5) contribute to fg color, rest to bg color. Both fg and bg ANSI codes emitted per character.
+- **Distance acceleration**: MSE uses `||a-b||² = ||a||² + ||b||² - 2·a·b` — the `a·b` term is a BLAS matmul, avoiding the O(R×G×P) broadcast.
+
 ### Adapter pattern
 
 Each adapter in `dapple/adapters/` provides:
@@ -63,6 +72,7 @@ Each extra in `dapple/extras/<tool>/` provides:
 - A `main()` function with argparse, registered as a console script in `pyproject.toml`
 - All share `dapple/extras/common.py` for renderer selection (`get_renderer`) and preprocessing (`apply_preprocessing`)
 - Import via `dapple.extras.X` namespace (e.g., `from dapple.extras.imgcat import imgcat`)
+- Rich-based extras (mdcat, htmlcat) share `dapple/extras/richrender.py` for Rich markdown rendering with inline dapple images
 
 ### Canvas output flow
 
@@ -81,12 +91,13 @@ Each extra in `dapple/extras/<tool>/` provides:
 - **Frozen dataclasses**: Renderers are immutable; `__call__` creates new variants.
 - **`from __future__ import annotations`**: Used in every module for PEP 604 union syntax (`X | None`).
 - **TYPE_CHECKING guards**: Heavy imports like `NDArray` and `Renderer` are behind `if TYPE_CHECKING:` blocks.
+- **Version**: Canonical version is in `pyproject.toml`. `dapple/__init__.py` has a `__version__` that should match.
 
 ## Dependencies
 
 - **Core**: numpy only
 - **Adapters** (`[adapters]`): pillow, matplotlib
-- **Individual tools**: `[imgcat]`, `[pdfcat]` (adds pypdfium2), `[mdcat]` (adds rich), `[vidcat]`, etc.
+- **Individual tools**: `[imgcat]`, `[pdfcat]` (adds pypdfium2), `[mdcat]` (adds rich), `[vidcat]`, `[htmlcat]` (adds rich + markdownify), etc.
 - **All tools** (`[all-tools]`): all extras deps bundled
 - **Dev** (`[dev]`): pytest, pytest-cov, all tools, all adapters
 

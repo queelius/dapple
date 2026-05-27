@@ -24,7 +24,7 @@ Example:
 
 from __future__ import annotations
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 # Core class
 from dapple.canvas import Canvas
@@ -47,6 +47,8 @@ from dapple.renderers import (
     kitty,
     FingerprintRenderer,
     fingerprint,
+    clear_glyph_caches,
+    warm_glyph_cache,
 )
 
 # Preprocessing functions
@@ -141,6 +143,9 @@ __all__ = [
     "sixel",
     "kitty",
     "fingerprint",
+    # Fingerprint helpers
+    "clear_glyph_caches",
+    "warm_glyph_cache",
     # Preprocessing
     "auto_contrast",
     "floyd_steinberg",

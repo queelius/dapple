@@ -23,6 +23,7 @@ def sparkline(
     width: int,
     height: int,
     color: tuple[float, float, float] | None = None,
+    thickness: int = 1,
 ) -> Canvas:
     """Render a sparkline — a compact line chart without axes.
 
@@ -31,6 +32,7 @@ def sparkline(
         width: Bitmap width in pixels.
         height: Bitmap height in pixels.
         color: RGB color tuple (0-1). Defaults to cyan.
+        thickness: Line thickness in pixels (default 1).
 
     Returns:
         Canvas with the sparkline rendered.
@@ -58,7 +60,9 @@ def sparkline(
     for i in range(len(vals)):
         col = pixel_cols[i]
         row = np.clip(pixel_rows[i], 0, height - 1)
-        if 0 <= col < width:
+        if thickness > 1:
+            _set_thick_pixel(bitmap, colors, col, row, color, thickness)
+        elif 0 <= col < width:
             bitmap[row, col] = 1.0
             colors[row, col] = color
 
@@ -66,7 +70,7 @@ def sparkline(
         if i > 0:
             prev_row = np.clip(pixel_rows[i - 1], 0, height - 1)
             prev_col = pixel_cols[i - 1]
-            _draw_line(bitmap, colors, prev_col, prev_row, col, row, color)
+            _draw_line(bitmap, colors, prev_col, prev_row, col, row, color, thickness)
 
     return Canvas(bitmap, colors=colors)
 
@@ -79,6 +83,7 @@ def line_plot(
     color: tuple[float, float, float] | None = None,
     show_axes: bool = True,
     series: list[tuple[Sequence[float], tuple[float, float, float] | None]] | None = None,
+    thickness: int = 1,
 ) -> Canvas:
     """Render a line plot with optional axes and multiple series.
 
@@ -91,20 +96,18 @@ def line_plot(
         series: Additional series as (values, color) tuples. Colors auto-cycle
                 from COLOR_PALETTE if None. When provided, `values` and `color`
                 are used as the first series.
+        thickness: Line thickness in pixels (default 1).
 
     Returns:
         Canvas with the line plot rendered.
     """
     # Build full list of (values, color) series
-    all_series: list[tuple[Sequence[float], tuple[float, float, float]]] = []
-
+    all_series: list[tuple[Sequence[float], tuple[float, float, float]]] = [
+        (values, color or COLOR_PALETTE[0]),
+    ]
     if series is not None:
-        # Multi-series mode: primary values + additional series
-        all_series.append((values, color or COLOR_PALETTE[0]))
         for i, (s_vals, s_color) in enumerate(series):
             all_series.append((s_vals, s_color or COLOR_PALETTE[(i + 1) % len(COLOR_PALETTE)]))
-    else:
-        all_series.append((values, color or COLOR_PALETTE[0]))
 
     # Check for any data
     if all(len(s[0]) == 0 for s in all_series):
@@ -140,14 +143,16 @@ def line_plot(
         for i in range(len(vals)):
             col = pixel_cols[i]
             row = np.clip(pixel_rows[i], 0, height - 1)
-            if 0 <= col < width:
+            if thickness > 1:
+                _set_thick_pixel(bitmap, colors, col, row, s_color, thickness)
+            elif 0 <= col < width:
                 bitmap[row, col] = 1.0
                 colors[row, col] = s_color
 
             if i > 0:
                 prev_row = np.clip(pixel_rows[i - 1], 0, height - 1)
                 prev_col = pixel_cols[i - 1]
-                _draw_line(bitmap, colors, prev_col, prev_row, col, row, s_color)
+                _draw_line(bitmap, colors, prev_col, prev_row, col, row, s_color, thickness)
 
     return Canvas(bitmap, colors=colors)
 
@@ -343,6 +348,31 @@ def _empty_canvas(width: int, height: int) -> Canvas:
     return Canvas(bitmap)
 
 
+def _set_thick_pixel(
+    bitmap: np.ndarray,
+    colors: np.ndarray,
+    x: int,
+    y: int,
+    color: tuple[float, float, float],
+    thickness: int,
+) -> None:
+    """Paint a `thickness` x `thickness` brush centered on (x, y).
+
+    For odd thickness the brush is centered exactly. For even thickness it
+    is offset to the top-left (standard convention), so thickness=2 paints
+    the 2x2 block covering (y-1, x-1), (y-1, x), (y, x-1), (y, x).
+    """
+    h, w = bitmap.shape
+    half = thickness // 2
+    for dy in range(thickness):
+        for dx in range(thickness):
+            ny = y + dy - half
+            nx = x + dx - half
+            if 0 <= ny < h and 0 <= nx < w:
+                bitmap[ny, nx] = 1.0
+                colors[ny, nx] = color
+
+
 def _draw_line(
     bitmap: np.ndarray,
     colors: np.ndarray,
@@ -351,6 +381,7 @@ def _draw_line(
     x1: int,
     y1: int,
     color: tuple[float, float, float],
+    thickness: int = 1,
 ) -> None:
     """Draw a line between two points using Bresenham's algorithm."""
     dx = abs(x1 - x0)
@@ -361,7 +392,9 @@ def _draw_line(
     h, w = bitmap.shape
 
     while True:
-        if 0 <= y0 < h and 0 <= x0 < w:
+        if thickness > 1:
+            _set_thick_pixel(bitmap, colors, x0, y0, color, thickness)
+        elif 0 <= y0 < h and 0 <= x0 < w:
             bitmap[y0, x0] = 1.0
             colors[y0, x0] = color
         if x0 == x1 and y0 == y1:

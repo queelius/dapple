@@ -261,3 +261,36 @@ class TestIntegration:
         )
         result = buf.getvalue()
         assert len(result) > 0
+
+
+# ── Line thickness ───────────────────────────────────────────────────
+
+
+class TestLineThickness:
+    """Regression: thickness=2 must produce a true 2x2 brush, not 3x3.
+
+    Earlier implementation used `r = thickness // 2; range(-r, r+1)`,
+    which always produced an odd-sided square, so thickness=2 painted
+    a 3x3 brush identical to thickness=3 (and thickness=4 looked like 5).
+    The fix gives every thickness value a distinct brush.
+    """
+
+    def test_thickness_pixel_counts_monotonic(self):
+        counts = [
+            int(
+                (sparkline([0, 1, 0, 1, 0], width=80, height=40, thickness=t).bitmap > 0).sum()
+            )
+            for t in (1, 2, 3, 4, 5)
+        ]
+        for prev, curr in zip(counts, counts[1:]):
+            assert curr > prev, f"non-monotonic thickness pixel counts: {counts}"
+
+    def test_thickness_2_distinct_from_3(self):
+        c2 = sparkline([0, 1, 0, 1, 0], width=80, height=40, thickness=2)
+        c3 = sparkline([0, 1, 0, 1, 0], width=80, height=40, thickness=3)
+        assert int((c2.bitmap > 0).sum()) != int((c3.bitmap > 0).sum())
+
+    def test_line_plot_thickness_changes_output(self):
+        c1 = line_plot([1, 5, 2, 8, 3], width=80, height=40, thickness=1)
+        c3 = line_plot([1, 5, 2, 8, 3], width=80, height=40, thickness=3)
+        assert int((c3.bitmap > 0).sum()) > int((c1.bitmap > 0).sum())
